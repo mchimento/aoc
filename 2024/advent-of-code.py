@@ -1293,8 +1293,8 @@ class AdventOfCode:
             dc = dirs.rotate90_clockwise(dir)
             dac = dirs.rotate90_anticlockwise(dir)
             dinv = dirs.turn_around(dir)
-            with open("output.txt", "a") as file:
-                print(f"Candidaties position to jump {(x, y, dc)} and {(x, y, dac)} and {(x, y, dinv)}", file=file)
+            #with open("output.txt", "a") as file:
+            #    print(f"Candidaties position to jump {(x, y, dc)} and {(x, y, dac)} and {(x, y, dinv)}", file=file)
             if (x, y, dc) in path and not (x, y, dc) in visited:
                 return (x, y, dc)
             elif (x, y, dac) in path and not (x, y, dac) in visited:
@@ -1307,8 +1307,8 @@ class AdventOfCode:
         def apply_cheat(x, y, dir, path, visited):
             rows = len(self.rows) - 1
             cols = len(self.rows[0]) - 1
-            with open("output.txt", "a") as file:
-                print(f"Apply from node {(x,y)}", file=file)
+            #with open("output.txt", "a") as file:
+            #    print(f"Apply from node {(x,y)}", file=file)
             # one step
             dx , dy = dirs.coord(dir)
             nx, ny = x + dx , y + dy
@@ -1321,14 +1321,14 @@ class AdventOfCode:
                     if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
                         return None , None
                     elif 0 <= nx < rows and 0 <= ny < cols:
-                        with open("output.txt", "a") as file:
-                            print(f"Check cheat at {nx, ny, dir}", file=file)
+                        #with open("output.txt", "a") as file:
+                        #    print(f"Check cheat at {nx, ny, dir}", file=file)
                         return cheat_to_path(nx, ny, dir, path, visited) , 3
                     else:
                         return None , None
                 elif 0 <= nx < rows and 0 <= ny < cols:
-                    with open("output.txt", "a") as file:
-                            print(f"Check cheat at {nx, ny, dir}", file=file)
+                    #with open("output.txt", "a") as file:
+                    #        print(f"Check cheat at {nx, ny, dir}", file=file)
                     return cheat_to_path(nx, ny, dir, path, visited) , 2
                 else:
                     return None , None
@@ -1342,41 +1342,41 @@ class AdventOfCode:
                     continue
                 cell_ind = i
             unvisited = unvisited[:cell_ind]
-            with open("output.txt", "a") as file:
-                print(f"Before steps {cell_ind}", file=file)
-                print(f"Now steps {steps_taken}", file=file)
+            #with open("output.txt", "a") as file:
+            #    print(f"Before steps {cell_ind}", file=file)
+            #    print(f"Now steps {steps_taken}", file=file)
             return cell_ind - steps_taken + 1
 
         def cheats_run(path):
             cheats = {}
             for i , step in enumerate(path):
                 x , y , dir = step
-                with open("output.txt", "a") as file:
-                    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
+                #with open("output.txt", "a") as file:
+                #    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
                 for d in dirs.directions:
-                    if dirs.turn_around(dir) == d:
+                    if d == dirs.turn_around(dir) and i != 0:
                         continue
                     dx , dy = dirs.coord(d)
                     nx, ny = x + dx , y + dy
                     if  0 <= nx < len(self.rows) - 1 and 0 <= ny < len(self.rows[0]) - 1 \
                         and self.rows[nx][ny] == dirs.wall:
-                        with open("output.txt", "a") as file:
-                            print(f"Candidate direction for cheat {d}, from Node {(x,y)}", file=file)
+                        #with open("output.txt", "a") as file:
+                        #    print(f"Candidate direction for cheat {d}, from Node {(x,y)}", file=file)
                         visited = path[:i+1]
                         new_step , steps_taken = apply_cheat(x, y, d, path, visited)
                         if new_step is not None:
                             picoseconds = check_step_saved(path, i, new_step, steps_taken)
-                            with open("output.txt", "a") as file:
-                                print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
-                                print(f"Savings: {picoseconds} steps.", file=file)
+                            #with open("output.txt", "a") as file:
+                            #    print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
+                            #    print(f"Savings: {picoseconds} steps.", file=file)
                             if picoseconds in cheats:
                                 xs = cheats[picoseconds]
                                 xs.append(new_step)
                                 cheats[picoseconds] = xs
                             else:
                                 cheats[picoseconds] = [new_step]
-                        with open("output.txt", "a") as file:
-                            print(f"No cheats applicable for candidate", file=file)
+                        #with open("output.txt", "a") as file:
+                        #    print(f"No cheats applicable for candidate", file=file)
             return cheats
 
         def picos_below_limit(picos, limit):
@@ -1402,50 +1402,6 @@ class AdventOfCode:
         #print(saved_picos)
         sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
         print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
-
-    def alt(self):
-        def parse_input():
-            self.rows = [ list(row) for row in self.rows ]
-        ds = ((1,0),(-1,0),(0,1),(0,-1))
-        def bfs(p):
-            distMap = {p:0}
-            queue = [p]
-            for r,c in queue:
-                d = distMap[(r,c)]
-                for dr,dc in ds:
-                    nr,nc = r+dr,c+dc
-                    if (nr,nc) not in distMap and self.rows[nr][nc] != '#':
-                        queue.append((nr,nc))
-                        distMap[(nr,nc)] = d+1
-            return distMap
-
-        parse_input()
-        start = self.get_initial_pos('S')
-        startMap = bfs(start)
-
-        def Cheats():
-            cheats = {}
-            for r,c in startMap:
-                for dr,dc in ds:
-                    nr,nc = r+2*dr,c+2*dc
-                    if (nr,nc) in startMap:
-                        if startMap[(r,c)] > startMap[(nr,nc)]:
-                            nn =  startMap[(r,c)] - startMap[(nr,nc)] -2
-                            if nn > 0:
-                                cheats[((nr,nc),(r,c))] = nn
-            return cheats
-
-        cheats = Cheats()
-        p1 = 0
-        sorted_dict = {k: v for k, v in sorted(cheats.items(), key=lambda item: item[1])}
-        with open("output.txt", "a") as file:
-            for d in sorted_dict:
-                print(f"{sorted_dict[d]}:{d}", file=file)
-        print(sorted_dict)
-        for i in cheats:
-            n = cheats[i]
-            if n >= 100:p1 += 1
-        print(p1)
 
     def main(self):
         """
