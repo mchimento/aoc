@@ -1304,7 +1304,7 @@ class AdventOfCode:
             else:
                 return None
 
-        def apply_cheat(x, y, dir, path, visited, limit = 2):
+        def cheat_step(x, y, dir, path, visited, limit):
             rows = len(self.rows) - 1
             cols = len(self.rows[0]) - 1
             #with open("output.txt", "a") as file:
@@ -1312,7 +1312,7 @@ class AdventOfCode:
             x_iter , y_iter = x , y
             for i in range(limit+1):
                 dx , dy = dirs.coord(dir)
-                nx, ny = x + dx , y + dy
+                nx, ny = x_iter + dx , y_iter + dy
                 if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
                     x_iter , y_iter = nx , ny
                     continue
@@ -1337,53 +1337,46 @@ class AdventOfCode:
             #    print(f"Now steps {steps_taken}", file=file)
             return cell_ind - steps_taken + 1
 
-        def cheats_run(path):
+        def cheats_run(path, limit):
             cheats = {}
             for i , step in enumerate(path):
                 x , y , dir = step
                 #with open("output.txt", "a") as file:
                 #    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
+                visited = path[:i+1]
                 for d in dirs.directions:
                     if d == dirs.turn_around(dir) and i != 0:
                         continue
-                    dx , dy = dirs.coord(d)
-                    nx, ny = x + dx , y + dy
-                    if  0 <= nx < len(self.rows) - 1 and 0 <= ny < len(self.rows[0]) - 1 \
-                        and self.rows[nx][ny] == dirs.wall:
+                    new_step , steps_taken = cheat_step(x, y, d, path, visited, limit)
+                    if new_step is not None:
+                        picoseconds = check_step_saved(path, i, new_step, steps_taken)
                         #with open("output.txt", "a") as file:
-                        #    print(f"Candidate direction for cheat {d}, from Node {(x,y)}", file=file)
-                        visited = path[:i+1]
-                        new_step , steps_taken = apply_cheat(x, y, d, path, visited)
-                        if new_step is not None:
-                            picoseconds = check_step_saved(path, i, new_step, steps_taken)
-                            #with open("output.txt", "a") as file:
-                            #    print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
-                            #    print(f"Savings: {picoseconds} steps.", file=file)
-                            if picoseconds in cheats:
-                                xs = cheats[picoseconds]
-                                xs.append(new_step)
-                                cheats[picoseconds] = xs
-                            else:
-                                cheats[picoseconds] = [new_step]
-                        #with open("output.txt", "a") as file:
-                        #    print(f"No cheats applicable for candidate", file=file)
+                        #    print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
+                        #    print(f"Savings: {picoseconds} steps.", file=file)
+                        if picoseconds in cheats:
+                            cheats[picoseconds] += 1
+                        else:
+                            cheats[picoseconds] = 1
+                    #with open("output.txt", "a") as file:
+                    #    print(f"No cheats applicable for candidate", file=file)
             return cheats
 
         def picos_below_limit(picos, limit):
             count = 0
             for d in picos:
                 if d >= limit:
-                    count += len(picos[d])
+                    count += picos[d]
             return count
 
         parse_input()
-        start_x , start_y = self.get_initial_pos('S')
-        dir = get_initial_dir(start_x, start_y)
-        cost , path = shortest_path(start_x, start_y, dir)
-        saved_picos = cheats_run(path)
+        self.start = self.get_initial_pos('S')
+        self.start_dir = get_initial_dir(self.start[0], self.start[1])
+        _ , path = shortest_path(self.start[0], self.start[1], dir)
+        saved_picos = cheats_run(path, 2)
         sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
         print(sorted_dict)
         print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
+        print(f"Part 1: {"coming soon"}")
 
     def main(self):
         """
