@@ -1309,7 +1309,7 @@ class AdventOfCode:
             cols = len(self.rows[0]) - 1
             #with open("output.txt", "a") as file:
             #    print(f"Apply from node {(x,y)}", file=file)
-            x_iter = x , y_iter = y
+            x_iter , y_iter = x , y
             for i in range(limit+1):
                 dx , dy = dirs.coord(dir)
                 nx, ny = x + dx , y + dy
