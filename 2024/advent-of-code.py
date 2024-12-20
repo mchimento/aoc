@@ -1388,19 +1388,11 @@ class AdventOfCode:
 
         parse_input()
         start_x , start_y = self.get_initial_pos('S')
-        print(start_x , start_y)
         dir = get_initial_dir(start_x, start_y)
         cost , path = shortest_path(start_x, start_y, dir)
-        print(path)
         saved_picos = cheats_run(path)
-        #for x , y, dir in path:
-        #    self.rows[x][y] = 'O'
-        #self.rows[start_x][start_y] = 'S'
-        #with open("output.txt", "a") as file:
-        #    for row in self.rows:
-        #        print(f"{"".join(row)}", file=file)
-        #print(saved_picos)
         sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
+        print(sorted_dict)
         print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
 
     def main(self):
