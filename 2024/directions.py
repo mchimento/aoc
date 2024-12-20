@@ -20,6 +20,9 @@ class Directions:
             case self.left:
                 return (0, -1)
 
+    def turn_around(self, dir):
+        return self.rotate90_clockwise(self.rotate90_clockwise(dir))
+
     def rotate90_clockwise(self, dir):
         if dir == self.right:
             return self.down

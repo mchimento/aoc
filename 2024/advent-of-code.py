@@ -358,7 +358,6 @@ class AdventOfCode:
     def day6(self):
         def parse_input():
             self.rows = [ list(row) for row in self.rows ]
-
         dirs = Directions(self.rows, '#')
 
         def is_inbounds(x, y):
@@ -374,6 +373,9 @@ class AdventOfCode:
                 visited.add((x, y))
                 dx, dy = dirs.coord(dir)
                 nx, ny = x + dx, y + dy
+                with open("output.txt", "a") as file:
+                    print(nx, ny, dir, file=file)
+                    print(dirs.move_from(x, y, dir), file=file)
 
                 if is_inbounds(nx, ny) and (self.rows[nx][ny] == dirs.wall or (obs and (nx, ny) == obs)):
                     dir = dirs.rotate90_clockwise(dir)
@@ -1156,14 +1158,13 @@ class AdventOfCode:
                 if (x, y) == (cols - 1, rows - 1):
                     path = []
                     current = (x, y, dir)
-                    while current is not None:  # Backtrack to the start
+                    while current is not None:
                         path.append(current)
                         current = parent.get(current)
-                    return dist, path[::-1]  # Reverse path to get start-to-end
+                    return dist, path[::-1]
                 visited.add((x, y, dir))
                 for d in dirs.directions:
                     nx, ny , ndir = dirs.move_from(x, y, d)
-                    # Check if the neighbor is within bounds and not visited
                     if (nx, ny, ndir) not in visited and self.grid[nx][ny] != dirs.wall:
                         queue.append((nx, ny, dist + 1, ndir))
                         visited.add((nx, ny, ndir))
@@ -1250,6 +1251,124 @@ class AdventOfCode:
         print(f"Part 1: {fitting_designs()}")
         print(f"Part 2: {count_combinations()}")
 
+    def day20(self):
+        dirs = Directions(self.rows, wall="#")
+        def parse_input():
+            self.rows = [ list(row) for row in self.rows ]
+        def get_initial_dir(start_x, start_y):
+            for d in dirs.directions:
+                dx , dy = dirs.coord(d)
+                nx, ny = start_x + dx , start_y + dy
+                if self.rows[nx][ny] != dirs.wall:
+                    return d
+
+        def shortest_path(start_x, start_y, start_dir):
+            rows, cols = len(self.rows), len(self.rows[0])
+            visited = set()
+            parent = {}
+            queue = deque([(start_x, start_y, start_dir, 0)])  # (x, y, dir, distance)
+
+            while queue:
+                x, y, dir, dist = queue.popleft()
+                if self.rows[x][y] == 'E':
+                    path = []
+                    current = (x, y, dir)
+                    while current is not None:
+                        path.append(current)
+                        current = parent.get(current)
+                    return dist, path[::-1]
+                visited.add((x, y, dir))
+                for d in dirs.directions:
+                    nx, ny , ndir = dirs.move_from(x, y, d)
+                    if 0 <= nx < rows and 0 <= ny < cols \
+                        and (nx, ny, ndir) not in visited \
+                        and self.rows[nx][ny] != dirs.wall:
+                        queue.append((nx, ny, ndir, dist + 1))
+                        visited.add((nx, ny, ndir))
+                        if (nx, ny, d) not in parent:
+                            parent[(nx, ny, ndir)] = (x, y, dir)
+            return None , None
+
+        def cheat_to_path(x, y, dir, path, visited):
+            dc = dirs.rotate90_clockwise(dir)
+            dac = dirs.rotate90_anticlockwise(dir)
+            if (x, y, dc) in path and not (x, y, dc) in visited:
+                return (x, y, dc)
+            elif (x, y, dac) in path and not (x, y, dac) in visited:
+                return (x, y, dac)
+            else:
+                return None
+
+        def apply_cheat(x, y, dir, path, visited):
+            rows = len(self.rows) - 1
+            cols = len(self.rows[0]) - 1
+            # one step
+            dx , dy = dirs.coord(dir)
+            nx, ny = x + dx , y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
+                #step two
+                nx, ny = nx + dx , ny + dy
+                if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
+                    #step three
+                    nx, ny = nx + dx , ny + dy
+                    if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
+                        return None , None
+                    elif 0 <= nx < rows and 0 <= ny < cols:
+                        return cheat_to_path(nx, ny, dir, path, visited) , 3
+                    else:
+                        return None , None
+                elif 0 <= nx < rows and 0 <= ny < cols:
+                    return cheat_to_path(nx, ny, dir, path, visited) , 2
+                else:
+                    return None , None
+            return None , None
+
+        def check_step_saved(path, cell):
+            for i , step in enumerate(path):
+                if step != cell:
+                    continue
+                return i+1
+
+        def cheats_run(cost, path, limit=100):
+            cheats = {}
+            for i , step in enumerate(path):
+                x , y , dir = step
+                with open("output.txt", "a") as file:
+                    print(f"check step {x , y , dir}", file=file)
+                for d in dirs.directions:
+                    if dirs.turn_around(dir) == d:
+                        continue
+                    dx , dy = dirs.coord(d)
+                    nx, ny = x + dx , y + dy
+                    if  0 <= nx < len(self.rows) - 1 and 0 <= ny < len(self.rows[0]) - 1 \
+                        and self.rows[nx][ny] == dirs.wall:
+                        with open("output.txt", "a") as file:
+                            print(f"Candidate for cheat in direction {d}", file=file)
+                        visited = path[:i+1]
+                        new_step , steps_taken = apply_cheat(x, y, dir, path, visited)
+                        if new_step is not None:
+                            picoseconds = check_step_saved(path[i+1:], new_step) + steps_taken
+                            with open("output.txt", "a") as file:
+                                print(f"Check step {new_step}, reached in {steps_taken} steps.", file=file)
+                            if picoseconds in cheats:
+                                cheats[picoseconds] += 1
+                            else:
+                                cheats[picoseconds] = 1
+                            break
+                        with open("output.txt", "a") as file:
+                            print(f"No cheats applicable", file=file)
+                    with open("output.txt", "a") as file:
+                        print(f"No cheats applicable", file=file)
+            return cheats
+
+        parse_input()
+        x , y = self.get_initial_pos('S')
+        dir = get_initial_dir(x, y)
+        cost , path = shortest_path(x, y, dir)
+        picos = cheats_run(cost, path)
+        print(path)
+        print(picos)
+
     def main(self):
         """
         Main function to process command-line arguments and handle the file input.
@@ -1265,7 +1384,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day6()
+        self.day20()
 
 if __name__ == "__main__":
     main = AdventOfCode()
