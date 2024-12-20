@@ -1304,34 +1304,24 @@ class AdventOfCode:
             else:
                 return None
 
-        def apply_cheat(x, y, dir, path, visited):
+        def apply_cheat(x, y, dir, path, visited, limit = 2):
             rows = len(self.rows) - 1
             cols = len(self.rows[0]) - 1
             #with open("output.txt", "a") as file:
             #    print(f"Apply from node {(x,y)}", file=file)
-            # one step
-            dx , dy = dirs.coord(dir)
-            nx, ny = x + dx , y + dy
-            if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
-                #step two
-                nx, ny = nx + dx , ny + dy
+            x_iter = x , y_iter = y
+            for i in range(limit+1):
+                dx , dy = dirs.coord(dir)
+                nx, ny = x + dx , y + dy
                 if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
-                    #step three
-                    nx, ny = nx + dx , ny + dy
-                    if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
-                        return None , None
-                    elif 0 <= nx < rows and 0 <= ny < cols:
-                        #with open("output.txt", "a") as file:
-                        #    print(f"Check cheat at {nx, ny, dir}", file=file)
-                        return cheat_to_path(nx, ny, dir, path, visited) , 3
-                    else:
-                        return None , None
+                    x_iter , y_iter = nx , ny
+                    continue
                 elif 0 <= nx < rows and 0 <= ny < cols:
                     #with open("output.txt", "a") as file:
-                    #        print(f"Check cheat at {nx, ny, dir}", file=file)
-                    return cheat_to_path(nx, ny, dir, path, visited) , 2
+                    #    print(f"Check cheat at {nx, ny, dir}", file=file)
+                    return cheat_to_path(nx, ny, dir, path, visited) , i+1
                 else:
-                    return None , None
+                    break
             return None , None
 
         def check_step_saved(path, ix, cell, steps_taken):
