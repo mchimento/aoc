@@ -1314,20 +1314,26 @@ class AdventOfCode:
                     if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
                         return None , None
                     elif 0 <= nx < rows and 0 <= ny < cols:
+                        with open("output.txt", "a") as file:
+                            print(f"Check cheat at {nx, ny, dir}", file=file)
                         return cheat_to_path(nx, ny, dir, path, visited) , 3
                     else:
                         return None , None
                 elif 0 <= nx < rows and 0 <= ny < cols:
+                    with open("output.txt", "a") as file:
+                            print(f"Check cheat at {nx, ny, dir}", file=file)
                     return cheat_to_path(nx, ny, dir, path, visited) , 2
                 else:
                     return None , None
             return None , None
 
-        def check_step_saved(path, cell):
-            for i , step in enumerate(path):
+        def check_step_saved(path, ix, cell):
+            unvisited = path[ix+1:]
+            visited = path[:i]
+            for i , step in enumerate(unvisited):
                 if step != cell:
                     continue
-                return i+1
+                return len(visited)-(i+1)
 
         def cheats_run(cost, path, limit=100):
             cheats = {}
@@ -1343,22 +1349,21 @@ class AdventOfCode:
                     if  0 <= nx < len(self.rows) - 1 and 0 <= ny < len(self.rows[0]) - 1 \
                         and self.rows[nx][ny] == dirs.wall:
                         with open("output.txt", "a") as file:
-                            print(f"Candidate for cheat in direction {d}", file=file)
+                            print(f"Candidate direction for cheat {d}", file=file)
                         visited = path[:i+1]
-                        new_step , steps_taken = apply_cheat(x, y, dir, path, visited)
+                        new_step , steps_taken = apply_cheat(x, y, d, path, visited)
                         if new_step is not None:
-                            picoseconds = check_step_saved(path[i+1:], new_step) + steps_taken
+                            picoseconds = check_step_saved(path, i, new_step) + steps_taken
                             with open("output.txt", "a") as file:
-                                print(f"Check step {new_step}, reached in {steps_taken} steps.", file=file)
+                                print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
+                                print(f"Savings: {picoseconds} steps.", file=file)
                             if picoseconds in cheats:
                                 cheats[picoseconds] += 1
                             else:
                                 cheats[picoseconds] = 1
                             break
                         with open("output.txt", "a") as file:
-                            print(f"No cheats applicable", file=file)
-                    with open("output.txt", "a") as file:
-                        print(f"No cheats applicable", file=file)
+                            print(f"No cheats applicable for candidate", file=file)
             return cheats
 
         parse_input()
@@ -1367,7 +1372,8 @@ class AdventOfCode:
         cost , path = shortest_path(x, y, dir)
         picos = cheats_run(cost, path)
         print(path)
-        print(picos)
+        sorted_dict = {k: picos[k] for k in sorted(picos)}
+        print(sorted_dict)
 
     def main(self):
         """
