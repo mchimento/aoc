@@ -1532,7 +1532,7 @@ class AdventOfCode:
                         keep.append(path)
             return keep
 
-        def filter_chunks(chunks):
+        def filter_consecutive_adj(chunks):
             def count_adj(xs):
                 count = 0
                 for i in range(len(xs)-1):
@@ -1540,9 +1540,9 @@ class AdventOfCode:
                         count +=1
                 return count
             keep = []
-            max_adj = 0
             for chunk in chunks:
                 n = count_adj(chunk)
+                max_adj = 0
                 if n > 0:
                     if n > max_adj:
                         max_adj = n
@@ -1551,10 +1551,38 @@ class AdventOfCode:
                         keep.append(chunk)
                     else:
                         continue
+            return keep
+
+        def filter_on_priority_adj(chunks):
+            def check_priority(dir1, dir2):
+                points1 = mapping_robotpad[dir1][1] - mapping_robotpad[dir1][0]
+                points2 = mapping_robotpad[dir2][1] - mapping_robotpad[dir2][0]
+                if points1 == points2:
+                    return 0
+                elif points1 > points2:
+                    return 1
+                else:
+                    return -1
+            current = chunks[0]
+            for i in range(1, len(chunks)):
+                accum = 0
+                for dir1 , dir2 in zip(current, chunks[i]):
+                    accum += check_priority(dir1, dir2)
+                if accum >= 0:
+                    continue
+                else:
+                    current = chunks[i]
+            return current
+
+        def filter_chunks(chunks):
+            keep = []
+            "chunks with more adjacents arrows in the same direction are cheaper to analyse"
+            keep = filter_consecutive_adj(chunks)
+            "prioritize adjcents arrows starting with right or up over down and over left, and down over left"
             if not keep:
-                return chunks
+                return [filter_on_priority_adj(chunks)]
             else:
-                return keep
+                return [filter_on_priority_adj(keep)]
 
         def robotpad_shortest_paths(numpad_paths):
             ret = []
@@ -1587,6 +1615,7 @@ class AdventOfCode:
                 robot_paths = numpad_shortest_paths(code)
                 for _ in range(limit):
                     robot_paths = robotpad_shortest_paths(robot_paths)
+                    #self.print_rows(robot_paths)
                     print(len(robot_paths))
                 min_length = len(robot_paths[0])
                 code.pop()
@@ -1599,7 +1628,7 @@ class AdventOfCode:
         self.print_rows(num_pad)
         start = time.time()
         #print(f"Part 1: {complexities(2)}")
-        print(f"Part 2: {complexities()}")
+        print(f"Part 2: {complexities(2)}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
