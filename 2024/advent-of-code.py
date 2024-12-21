@@ -1490,48 +1490,6 @@ class AdventOfCode:
             robot_pad_dirs.left : (1,0), robot_pad_dirs.down : (1,1), robot_pad_dirs.right : (1,2)
         }
 
-        def shortest_paths(start, end, grid, dirs):
-            pq = []
-            parent = {}
-            heapq.heappush(pq, (0, start[0], start[1]))  # (cost, x, y)
-            visited = set()
-            rows , cols = len(grid)-1 , len(grid[0])-1
-
-            while pq:
-                cost, x, y = heapq.heappop(pq)
-                if grid[x][y] == end:
-                    all_paths = []
-                    reconstruct_paths((x, y), start, parent, all_paths, [(x, y)])
-                    all_paths = list(map(lambda xs: xs[::-1], all_paths))
-                    return cost, all_paths
-
-                if (x, y) in visited:
-                    continue
-                visited.add((x, y))
-
-                for d in dirs.directions:
-                    dx , dy = dirs.coord(d)
-                    nx, ny = x + dx , y + dy
-                    if 0 <= nx <= rows and 0 <= ny <= cols \
-                        and (nx, ny) not in visited \
-                        and grid[nx][ny] != dirs.wall:
-                        heapq.heappush(pq, (cost + 1, nx, ny))
-                        if (nx, ny) not in parent:
-                            parent[(nx, ny)] = []
-                        parent[(nx, ny)].append((x, y))
-
-            return None, []
-
-        def reconstruct_paths(current, start, parent, all_paths, current_path):
-            if current == start:
-                all_paths.append(list(current_path))
-                return
-            if current in parent:
-                for px, py in parent[current]:
-                    current_path.append((px, py))
-                    reconstruct_paths((px, py), start, parent, all_paths, current_path)
-                    current_path.pop()
-
         def transform_coord(path, dirs):
             keep = []
             for i in range(len(path)-1):
@@ -1574,6 +1532,30 @@ class AdventOfCode:
                         keep.append(path)
             return keep
 
+        def filter_chunks(chunks):
+            def count_adj(xs):
+                count = 0
+                for i in range(len(xs)-1):
+                    if xs[i] == xs[i+1]:
+                        count +=1
+                return count
+            keep = []
+            max_adj = 0
+            for chunk in chunks:
+                n = count_adj(chunk)
+                if n > 0:
+                    if n > max_adj:
+                        max_adj = n
+                        keep = [chunk]
+                    elif n == max_adj:
+                        keep.append(chunk)
+                    else:
+                        continue
+            if not keep:
+                return chunks
+            else:
+                return keep
+
         def robotpad_shortest_paths(numpad_paths):
             ret = []
             current = mapping_robotpad['A']
@@ -1581,9 +1563,9 @@ class AdventOfCode:
             for path in numpad_paths:
                 aux = []
                 for end in path:
-                    _ , paths = shortest_paths(current, end, robot_pad, robot_pad_dirs)
+                    _ , paths = robot_pad_grid.shortest_paths(current, end, robot_pad, robot_pad_dirs)
                     if paths:
-                        keep = list(map(lambda xs: transform_coord(xs, robot_pad_dirs), paths))
+                        keep = filter_chunks(list(map(lambda xs: transform_coord(xs, robot_pad_dirs), paths)))
                         if not aux:
                             aux = keep
                         else:
