@@ -1490,27 +1490,24 @@ class AdventOfCode:
             robot_pad_dirs.left : (1,0), robot_pad_dirs.down : (1,1), robot_pad_dirs.right : (1,2)
         }
 
-        def shortest_paths(start, end, grid, dirs, limit=None):
+        def shortest_paths(start, end, grid, dirs):
             pq = []
             parent = {}
             heapq.heappush(pq, (0, start[0], start[1]))  # (cost, x, y)
-            visited = {} #set()
+            visited = set()
             rows , cols = len(grid)-1 , len(grid[0])-1
 
             while pq:
                 cost, x, y = heapq.heappop(pq)
-                if limit is not None and cost >= limit:
-                    return None, []
                 if grid[x][y] == end:
                     all_paths = []
                     reconstruct_paths((x, y), start, parent, all_paths, [(x, y)])
                     all_paths = list(map(lambda xs: xs[::-1], all_paths))
                     return cost, all_paths
 
-                if (x, y) in visited and visited[(x, y)] <= cost:
+                if (x, y) in visited:
                     continue
-                #visited.add((x, y))
-                visited[(x, y)] = cost
+                visited.add((x, y))
 
                 for d in dirs.directions:
                     dx , dy = dirs.coord(d)
@@ -1584,8 +1581,7 @@ class AdventOfCode:
             for path in numpad_paths:
                 aux = []
                 for end in path:
-                    _ , paths = shortest_paths(current, end, robot_pad, robot_pad_dirs, min_length)
-
+                    _ , paths = shortest_paths(current, end, robot_pad, robot_pad_dirs)
                     if paths:
                         keep = list(map(lambda xs: transform_coord(xs, robot_pad_dirs), paths))
                         if not aux:
@@ -1594,11 +1590,12 @@ class AdventOfCode:
                             aux = [xs + ys for xs in aux for ys in keep]
                     current = mapping_robotpad[end]
                 if min_length is None:
-                    min_length = len(aux[0])+1
+                    min_length = len(aux[0])
+                    ret += aux
+                    continue
                 if len(aux[0]) < min_length:
                     min_length = len(aux[0])
                     ret = []
-
                 ret += aux
             return filter_min(ret)
 
@@ -1609,7 +1606,6 @@ class AdventOfCode:
                 for _ in range(limit):
                     robot_paths = robotpad_shortest_paths(robot_paths)
                     print(len(robot_paths))
-                    #self.print_rows(robot_paths)
                 min_length = len(robot_paths[0])
                 code.pop()
                 code_int = int("".join(code))
