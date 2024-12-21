@@ -4,6 +4,8 @@ from itertools import groupby
 from collections import deque
 import heapq
 from directions import Directions
+from grid import Coordinate, Grid
+import time
 
 class AdventOfCode:
 
@@ -50,6 +52,10 @@ class AdventOfCode:
 
     def int_list(self, list_string):
         return [int(x) for x in list_string]
+
+    def split_str_by_fun(self, grid, fun):
+        grid = [ fun(row) for row in grid ]
+        return grid
 
     def is_valid(self, x , y):
         return 0 <= x < len(self.rows) \
@@ -373,9 +379,6 @@ class AdventOfCode:
                 visited.add((x, y))
                 dx, dy = dirs.coord(dir)
                 nx, ny = x + dx, y + dy
-                with open("output.txt", "a") as file:
-                    print(nx, ny, dir, file=file)
-                    print(dirs.move_from(x, y, dir), file=file)
 
                 if is_inbounds(nx, ny) and (self.rows[nx][ny] == dirs.wall or (obs and (nx, ny) == obs)):
                     dir = dirs.rotate90_clockwise(dir)
@@ -1324,6 +1327,58 @@ class AdventOfCode:
                     break
             return None , None
 
+        def cheat_step_new(candidate, steps, path, visited):
+            rows = len(self.rows) - 1
+            cols = len(self.rows[0]) - 1
+            x , y, dir, _ = candidate
+            hitted_wall = set()
+            cheats = set()
+            with open("output.txt", "a") as file:
+                print(f"checking candidate {x , y , dir}", file=file)
+            for d in dirs.directions:
+                dx , dy = dirs.coord(d)
+                nx, ny = x + dx , y + dy
+                with open("output.txt", "a") as file:
+                    print(f"Check cheat at {nx, ny, d}", file=file)
+                if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
+                    with open("output.txt", "a") as file:
+                        print(f"Hits wall", file=file)
+                    hitted_wall.add((nx, ny, d, steps))
+                elif 0 <= nx < rows and 0 <= ny < cols:
+                    with open("output.txt", "a") as file:
+                        print(f"Getting cheat", file=file)
+                    cheat = cheat_to_path(nx, ny, d, path, visited)
+                    if cheat is not None:
+                        xc , yc, dirc = cheat
+                        with open("output.txt", "a") as file:
+                            print(f"Cheat at {xc , yc, dirc}", file=file)
+                        cheats.add((xc , yc, dirc, steps))
+                else:
+                    with open("output.txt", "a") as file:
+                        print(f"No new candidates", file=file)
+                    continue
+            return cheats , hitted_wall
+
+        def cheat_path(x , y, dir, limit, path, visited):
+            candidates = set()
+            candidates = [(x, y, dir, 0)]
+            cheats = set()
+            for i in range(limit):
+                with open("output.txt", "a") as file:
+                        print(f"cheat_path iter {i}", file=file)
+                if not candidates:
+                    break
+                new_candidates = set()
+                for candidate in candidates:
+                    new_steps , hitted_wall = cheat_step_new(candidate, i+1, path, visited)
+                    new_candidates = new_candidates | hitted_wall
+                    with open("output.txt", "a") as file:
+                        print(f"New candidates {hitted_wall}", file=file)
+                        print(f"New cheats {new_steps}", file=file)
+                    cheats = cheats | new_steps
+                candidates = new_candidates
+            return cheats
+
         def check_step_saved(path, ix, cell, steps_taken):
             cell_ind = -1
             unvisited = path[ix+1:]
@@ -1331,7 +1386,6 @@ class AdventOfCode:
                 if step != cell:
                     continue
                 cell_ind = i
-            unvisited = unvisited[:cell_ind]
             #with open("output.txt", "a") as file:
             #    print(f"Before steps {cell_ind}", file=file)
             #    print(f"Now steps {steps_taken}", file=file)
@@ -1345,8 +1399,6 @@ class AdventOfCode:
                 #    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
                 visited = path[:i+1]
                 for d in dirs.directions:
-                    if d == dirs.turn_around(dir) and i != 0:
-                        continue
                     new_step , steps_taken = cheat_step(x, y, d, path, visited, limit)
                     if new_step is not None:
                         picoseconds = check_step_saved(path, i, new_step, steps_taken)
@@ -1354,11 +1406,49 @@ class AdventOfCode:
                         #    print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
                         #    print(f"Savings: {picoseconds} steps.", file=file)
                         if picoseconds in cheats:
-                            cheats[picoseconds] += 1
+                            a , b = cheats[picoseconds]
+                            b.append(new_step)
+                            cheats[picoseconds] = (a+1, b)
                         else:
-                            cheats[picoseconds] = 1
+                            cheats[picoseconds] = (1, [new_step])
                     #with open("output.txt", "a") as file:
                     #    print(f"No cheats applicable for candidate", file=file)
+            return cheats
+
+        def check_step_saved_new(path, ix, cheats):
+            cell_ind = -1
+            unvisited = path[ix+1:]
+            picos =[]
+            for cheat in cheats:
+                x , y, dir, n = cheat
+                for i , step in enumerate(unvisited):
+                    if step != (x, y, dir):
+                        continue
+                    cell_ind = i
+                picos.append((cell_ind - n + 1, (x,y)))
+            return picos
+
+        def cheats_run_new(path, limit):
+            cheats = {}
+            for i , step in enumerate(path):
+                x , y , dir = step
+                with open("output.txt", "a") as file:
+                    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
+                visited = path[:i+1]
+                cheats_found = cheat_path(x, y, dir, limit, path, visited)
+                picoseconds = check_step_saved_new(path, i, cheats_found)
+                with open("output.txt", "a") as file:
+                    print(f"Cheats found {cheats_found}", file=file)
+                    print(f"Steps calculation: {picoseconds}", file=file)
+                for picos , new_step in picoseconds:
+                    if picos in cheats:
+                        a , b = cheats[picos]
+                        b.append(new_step)
+                        cheats[picos] = (a+1, b)
+                    else:
+                        cheats[picos] = (1, [new_step])
+            with open("output.txt", "a") as file:
+                print(f"No cheats applicable for candidate", file=file)
             return cheats
 
         def picos_below_limit(picos, limit):
@@ -1371,12 +1461,149 @@ class AdventOfCode:
         parse_input()
         self.start = self.get_initial_pos('S')
         self.start_dir = get_initial_dir(self.start[0], self.start[1])
-        _ , path = shortest_path(self.start[0], self.start[1], dir)
-        saved_picos = cheats_run(path, 2)
+        _ , path = shortest_path(self.start[0], self.start[1], self.start_dir)
+        saved_picos = cheats_run_new(path, 2)
         sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
         print(sorted_dict)
         print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
         print(f"Part 1: {"coming soon"}")
+
+    def day21(self):
+        def parse_input():
+            self.codes = self.split_str_by_fun(self.rows, list)
+
+        num_pad = [['7', '8', '9'], ['4', '5','6'],['1', '2', '3'], ['X', '0', 'A']]
+        mapping_numpad = {
+            '7' : (0,0), '8' : (0,1), '9' : (0,2),
+            '4' : (1,0), '5' : (1,1), '6' : (1,2),
+            '1' : (2,0), '2' : (2,1), '3' : (2,2),
+            'X' : (3,0), '0' : (3,1), 'A' : (3,2)
+        }
+        num_pad_grid = Grid(num_pad)
+        num_pad_dirs = Directions(num_pad, wall='X')
+
+        robot_pad = [['X', num_pad_dirs.up, 'A'], [num_pad_dirs.left, num_pad_dirs.down, num_pad_dirs.right]]
+        robot_pad_grid = Grid(robot_pad)
+        robot_pad_dirs = Directions(robot_pad, wall='X')
+        mapping_robotpad = {
+            'X' : (0,0), robot_pad_dirs.up : (0,1), 'A' : (0,2),
+            robot_pad_dirs.left : (1,0), robot_pad_dirs.down : (1,1), robot_pad_dirs.right : (1,2)
+        }
+
+        def shortest_paths(start, end, grid, dirs, limit=None):
+            pq = []
+            parent = {}
+            heapq.heappush(pq, (0, start[0], start[1]))  # (cost, x, y)
+            visited = set()
+            rows , cols = len(grid)-1 , len(grid[0])-1
+
+            while pq:
+                cost, x, y = heapq.heappop(pq)
+                if limit is not None:
+                    if cost >= limit:
+                        return None, []
+                if grid[x][y] == end:
+                    all_paths = []
+                    reconstruct_paths(x, y, start, parent, all_paths, [(x, y)])
+                    all_paths = list(map(lambda xs: xs[::-1], all_paths))
+                    return cost, all_paths
+
+                if (x, y) in visited:
+                    continue
+                visited.add((x, y))
+
+                for d in dirs.directions:
+                    dx , dy = dirs.coord(d)
+                    nx, ny = x + dx , y + dy
+                    if 0 <= nx <= rows and 0 <= ny <= cols \
+                        and (nx, ny) not in visited \
+                        and grid[nx][ny] != dirs.wall:
+                        heapq.heappush(pq, (cost + 1, nx, ny))
+                        if (nx, ny) not in parent:
+                            parent[(nx, ny)] = []
+                        parent[(nx, ny)].append((x, y))
+
+            return None, []
+
+        def reconstruct_paths(x, y, start, parent, all_paths, current_path):
+            if (x, y) == (start[0], start[1]):
+                all_paths.append(list(current_path))
+                return
+            if (x, y) in parent:
+                for px, py in parent[(x, y)]:
+                    current_path.append((px, py))
+                    reconstruct_paths(px, py, start, parent, all_paths, current_path)
+                    current_path.pop()
+
+        def transform_coord(path, dirs):
+            keep = []
+            for i in range(len(path)-1):
+                if path[i][0] == path[i+1][0] + 1:
+                    keep.append(dirs.up)
+                elif path[i][0] == path[i+1][0] - 1:
+                    keep.append(dirs.down)
+                elif path[i][1] == path[i+1][1] - 1:
+                    keep.append(dirs.right)
+                else:
+                    keep.append(dirs.left)
+            keep.append('A')
+            return keep
+
+        def numpad_shortest_paths(code):
+            ret = []
+            current = mapping_numpad['A']
+            for end in code:
+                _ , paths = num_pad_grid.shortest_paths(current, end, num_pad, num_pad_dirs)
+                keep = list(map(lambda xs: transform_coord(xs, num_pad_dirs), paths))
+                if not ret:
+                    ret = keep
+                else:
+                    ret = [xs + ys for xs in ret for ys in keep]
+                current = mapping_numpad[end]
+            return ret
+
+        def robotpad_shortest_paths(numpad_paths):
+            ret = []
+            current = mapping_robotpad['A']
+            min_length = None
+            for path in numpad_paths:
+                aux = []
+                for end in path:
+                    _ , paths = shortest_paths(current, end, robot_pad, robot_pad_dirs, min_length)
+                    if paths:
+                        keep = list(map(lambda xs: transform_coord(xs, robot_pad_dirs), paths))
+                        if not aux:
+                            aux = keep
+                        else:
+                            aux = [xs + ys for xs in aux for ys in keep]
+                    current = mapping_robotpad[end]
+                if min_length is None:
+                    min_length = len(aux[0])+1
+                if len(aux[0]) < min_length:
+                    min_length = len(aux[0])
+                    ret = []
+                ret += aux
+            return ret
+
+        def complexities():
+            ret = 0
+            for code in self.codes:
+                robot1_paths = numpad_shortest_paths(code)
+                robot2_paths = robotpad_shortest_paths(robot1_paths)
+                robot3_paths = robotpad_shortest_paths(robot2_paths)
+                min_length = len(robot3_paths[0])
+                code.pop()
+                code_int = int("".join(code))
+                print(f"complexity is {min_length} * {code_int}")
+                ret += min_length * code_int
+            return ret
+
+        parse_input()
+        self.print_rows(num_pad)
+        start = time.time()
+        print(f"Part 1: {complexities()}")
+        end = time.time()
+        print(f"Execution time: {end - start} seconds")
 
     def main(self):
         """
@@ -1393,7 +1620,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day20()
+        self.day21()
 
 if __name__ == "__main__":
     main = AdventOfCode()
