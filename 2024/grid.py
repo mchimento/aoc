@@ -94,15 +94,16 @@ class Grid:
 
         while pq:
             cost, x, y = heapq.heappop(pq)
+
+            if (x, y) in visited:
+                continue
+            visited.add((x, y))
+
             if grid[x][y] == end:
                 all_paths = []
                 self.reconstruct_paths(x, y, start, parent, all_paths, [(x, y)])
                 all_paths = list(map(lambda xs: xs[::-1], all_paths))
                 return cost, all_paths
-
-            if (x, y) in visited:
-                continue
-            visited.add((x, y))
 
             for d in dirs.directions:
                 dx , dy = dirs.coord(d)

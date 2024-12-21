@@ -1494,23 +1494,23 @@ class AdventOfCode:
             pq = []
             parent = {}
             heapq.heappush(pq, (0, start[0], start[1]))  # (cost, x, y)
-            visited = set()
+            visited = {} #set()
             rows , cols = len(grid)-1 , len(grid[0])-1
 
             while pq:
                 cost, x, y = heapq.heappop(pq)
-                if limit is not None:
-                    if cost >= limit:
-                        return None, []
+                if limit is not None and cost >= limit:
+                    return None, []
                 if grid[x][y] == end:
                     all_paths = []
-                    reconstruct_paths(x, y, start, parent, all_paths, [(x, y)])
+                    reconstruct_paths((x, y), start, parent, all_paths, [(x, y)])
                     all_paths = list(map(lambda xs: xs[::-1], all_paths))
                     return cost, all_paths
 
-                if (x, y) in visited:
+                if (x, y) in visited and visited[(x, y)] <= cost:
                     continue
-                visited.add((x, y))
+                #visited.add((x, y))
+                visited[(x, y)] = cost
 
                 for d in dirs.directions:
                     dx , dy = dirs.coord(d)
@@ -1525,14 +1525,14 @@ class AdventOfCode:
 
             return None, []
 
-        def reconstruct_paths(x, y, start, parent, all_paths, current_path):
-            if (x, y) == (start[0], start[1]):
+        def reconstruct_paths(current, start, parent, all_paths, current_path):
+            if current == start:
                 all_paths.append(list(current_path))
                 return
-            if (x, y) in parent:
-                for px, py in parent[(x, y)]:
+            if current in parent:
+                for px, py in parent[current]:
                     current_path.append((px, py))
-                    reconstruct_paths(px, py, start, parent, all_paths, current_path)
+                    reconstruct_paths((px, py), start, parent, all_paths, current_path)
                     current_path.pop()
 
         def transform_coord(path, dirs):
@@ -1562,6 +1562,21 @@ class AdventOfCode:
                 current = mapping_numpad[end]
             return ret
 
+        def filter_min(paths):
+            length = 0
+            keep = []
+            for path in paths:
+                path_len = len(path)
+                if length == 0:
+                    length = path_len
+                    keep.append(path)
+                else:
+                    if path_len > length:
+                        continue
+                    else:
+                        keep.append(path)
+            return keep
+
         def robotpad_shortest_paths(numpad_paths):
             ret = []
             current = mapping_robotpad['A']
@@ -1570,6 +1585,7 @@ class AdventOfCode:
                 aux = []
                 for end in path:
                     _ , paths = shortest_paths(current, end, robot_pad, robot_pad_dirs, min_length)
+
                     if paths:
                         keep = list(map(lambda xs: transform_coord(xs, robot_pad_dirs), paths))
                         if not aux:
@@ -1582,16 +1598,19 @@ class AdventOfCode:
                 if len(aux[0]) < min_length:
                     min_length = len(aux[0])
                     ret = []
-                ret += aux
-            return ret
 
-        def complexities():
+                ret += aux
+            return filter_min(ret)
+
+        def complexities(limit=2):
             ret = 0
             for code in self.codes:
-                robot1_paths = numpad_shortest_paths(code)
-                robot2_paths = robotpad_shortest_paths(robot1_paths)
-                robot3_paths = robotpad_shortest_paths(robot2_paths)
-                min_length = len(robot3_paths[0])
+                robot_paths = numpad_shortest_paths(code)
+                for _ in range(limit):
+                    robot_paths = robotpad_shortest_paths(robot_paths)
+                    print(len(robot_paths))
+                    #self.print_rows(robot_paths)
+                min_length = len(robot_paths[0])
                 code.pop()
                 code_int = int("".join(code))
                 print(f"complexity is {min_length} * {code_int}")
@@ -1601,7 +1620,8 @@ class AdventOfCode:
         parse_input()
         self.print_rows(num_pad)
         start = time.time()
-        print(f"Part 1: {complexities()}")
+        #print(f"Part 1: {complexities(2)}")
+        print(f"Part 2: {complexities()}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
