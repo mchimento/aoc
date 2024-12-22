@@ -586,6 +586,37 @@ class AdventOfCode:
             res += len(check_trailhead(trailhead))
         print(f"Part 2: {res}")
 
+    def day11(self):
+        def parse_input():
+            self.rows = self.rows[0].split(" ")
+        def split_in_half(s):
+            mid = len(s) // 2
+            return s[:mid], s[mid:]
+        def apply_rules(stone):
+            if stone == '0':
+                return '1' , None
+            elif (len(stone) % 2) == 0:
+                xs , ys = split_in_half(stone)
+                return xs.lstrip('0') or '0', ys.lstrip('0') or '0'
+            else:
+                return str(int(stone)*2024) , None
+        def blink(times):
+            stones = self.rows
+            for _ in range(times):
+                new_stones = []
+                for stone in stones:
+                    s1 , s2 = apply_rules(stone)
+                    if s2 is not None:
+                        new_stones.append(s1)
+                        new_stones.append(s2)
+                    else:
+                        new_stones.append(s1)
+                stones = new_stones
+            return stones
+        parse_input()
+        stones = blink(25)
+        print(f"Part 1: {len(blink(25))}")
+
     def day12(self):
         def check_plot_after(x, y, plant):
             if y + 1 < len(self.columns):
@@ -1666,7 +1697,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day21()
+        self.day11()
 
 if __name__ == "__main__":
     main = AdventOfCode()
