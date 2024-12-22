@@ -593,13 +593,19 @@ class AdventOfCode:
             mid = len(s) // 2
             return s[:mid], s[mid:]
         def apply_rules(stone):
-            if stone == '0':
-                return '1' , None
-            elif (len(stone) % 2) == 0:
+            if stone in stones_dic:
+                return stones_dic[stone]
+            if (len(stone) % 2) == 0:
                 xs , ys = split_in_half(stone)
-                return xs.lstrip('0') or '0', ys.lstrip('0') or '0'
+                stone1 = xs.lstrip('0') or '0'
+                stone2 = ys.lstrip('0') or '0'
+                stones_dic[stone] = (stone1, stone2)
+                return stone1, stone2
             else:
-                return str(int(stone)*2024) , None
+                ret = str(int(stone)*2024) , None
+                stones_dic[stone] = ret
+                return ret
+        stones_dic = { '0' : ('1', None)}
         def blink(times):
             stones = self.rows
             for _ in range(times):
@@ -614,8 +620,10 @@ class AdventOfCode:
                 stones = new_stones
             return stones
         parse_input()
-        stones = blink(25)
+        start = time.time()
         print(f"Part 1: {len(blink(25))}")
+        end = time.time()
+        print(f"Execution time: {end - start} seconds")
 
     def day12(self):
         def check_plot_after(x, y, plant):
