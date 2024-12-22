@@ -621,7 +621,7 @@ class AdventOfCode:
             return stones
         parse_input()
         start = time.time()
-        print(f"Part 1: {len(blink(25))}")
+        print(f"Part 1: {len(blink(38))}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
