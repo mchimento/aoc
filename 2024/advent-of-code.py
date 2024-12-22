@@ -7,6 +7,7 @@ from directions import Directions
 from grid import Coordinate, Grid
 import time
 from collections import Counter
+from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 
 class AdventOfCode:
 
@@ -34,11 +35,11 @@ class AdventOfCode:
             print(f"Error: The file '{file_path}' was not found.")
             return None
 
-    def process_data_as_string(self, file_path):
+    def process_data_as_string(self, file_path, eof_by=""):
         try:
             with open(file_path, 'r') as file:
                 # Read lines from the file
-                data = file.read().strip().replace("\n","")
+                data = file.read().strip().replace("\n",eof_by)
             return data
         except FileNotFoundError:
             print(f"Error: The file '{file_path}' was not found.")
@@ -704,6 +705,86 @@ class AdventOfCode:
             part2 += area(region[0]) * sides(region)
         print(f"Part 1: {part1}")
         print(f"Part 2: {part2}")
+
+    def day13(self):
+        def parse_input():
+            pattern = re.compile(r'(Button [A-B]: )?(X[+-]?\d+),\s*(Y[+-]?\d+)|Prize: (X=\d+),\s*(Y=\d+)')
+            matches = pattern.findall(self.rows)
+            parsed_elements = []
+
+            for match in matches:
+                # If it's a Button match (Button A or Button B)
+                if match[0]:
+                    button, x_value, y_value, _, _ = match
+                    button_label = button.split()[1]
+                    x_var, x_num = x_value.split('+') if '+' in x_value else x_value.split('-')
+                    y_var, y_num = y_value.split('+') if '+' in y_value else y_value.split('-')
+
+                    x_num = int(x_num) if x_num != '' else 0
+                    y_num = int(y_num) if y_num != '' else 0
+
+                    parsed_elements.append([button_label, x_var, x_num, y_var, y_num])
+                elif match[3]:
+                    # If it's a Prize match
+                    x_value, y_value = match[3], match[4]
+                    x_var, x_num = x_value.split('=')
+                    y_var, y_num = y_value.split('=')
+
+                    parsed_elements.append([x_var, int(x_num), y_var, int(y_num)])
+
+            problems = []
+            for i in range(0, len(parsed_elements), 3):
+                problem = [parsed_elements[i], parsed_elements[i+1], parsed_elements[i+2]]
+                problems.append(problem)
+
+            return problems
+
+        def solve_lp_int(x1, y1, x2, y2, x, y, limit):
+            problem = LpProblem("Maximize_X2_Y2", LpMaximize)
+
+            # Define integer variables
+            X1 = LpVariable("X1", lowBound=0, upBound=limit, cat="Integer")
+            X2 = LpVariable("X2", lowBound=0, upBound=limit, cat="Integer")
+            Y1 = LpVariable("Y1", lowBound=0, upBound=limit, cat="Integer")
+            Y2 = LpVariable("Y2", lowBound=0, upBound=limit, cat="Integer")
+
+            problem += X2 + Y2, "Objective"
+            problem += x1 * X1 + x2 * X2 == x, "Constraint_X"
+            problem += y1 * Y1 + y2 * Y2 == y, "Constraint_Y"
+            problem += X1 == Y1, "Constraint_X1_equals_Y1"
+            problem += X2 == Y2, "Constraint_X2_equals_Y2"
+
+            solver = PULP_CBC_CMD(msg=False)
+            status = problem.solve(solver)
+
+            if status == 1:
+                print("Optimized Solution:")
+                print(f"  X1 = {X1.varValue}")
+                print(f"  X2 = {X2.varValue}")
+                print(f"  Y1 = {Y1.varValue}")
+                print(f"  Y2 = {Y2.varValue}")
+                return X1.varValue , X2.varValue
+            else:
+                print("Optimization failed.")
+                return None , None
+
+        def find_tokens(nlp, limit=100):
+            final = 0
+            for problem in nlp:
+                A = problem[0]
+                B = problem[1]
+                X = problem[2]
+                a_push , b_push = solve_lp_int(A[2], A[4], B[2], B[4], X[1], X[3], limit)
+                if a_push is not None:
+                    tokens = a_push * 3 + b_push
+                    print(f"Tokens needed: {tokens}")
+                    final += tokens
+            return final
+
+        nlp = parse_input()
+        print(f"Part 1: {find_tokens(nlp)}")
+
+
 
     def day15(self):
         dirs = Directions(self.rows, '#')
@@ -1696,11 +1777,12 @@ class AdventOfCode:
         file_paths = args.file_paths
 
         # Process the file and get columns
-        self.rows = self.process_data_as_rows(file_paths[0])
+        #self.rows = self.process_data_as_rows(file_paths[0])
+        self.rows = self.process_data_as_string(file_paths[0], " ")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day11()
+        self.day13()
 
 if __name__ == "__main__":
     main = AdventOfCode()
