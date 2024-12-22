@@ -8,6 +8,7 @@ from grid import Coordinate, Grid
 import time
 from collections import Counter
 from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
+from sympy import solve, Symbol
 
 class AdventOfCode:
 
@@ -739,14 +740,14 @@ class AdventOfCode:
 
             return problems
 
-        def solve_lp_int(x1, y1, x2, y2, x, y, limit):
+        def solve_lp_int(x1, y1, x2, y2, x, y):
             problem = LpProblem("Maximize_X2_Y2", LpMaximize)
 
             # Define integer variables
-            X1 = LpVariable("X1", lowBound=0, upBound=limit, cat="Integer")
-            X2 = LpVariable("X2", lowBound=0, upBound=limit, cat="Integer")
-            Y1 = LpVariable("Y1", lowBound=0, upBound=limit, cat="Integer")
-            Y2 = LpVariable("Y2", lowBound=0, upBound=limit, cat="Integer")
+            X1 = LpVariable("X1", lowBound=0, upBound=100, cat="Integer")
+            X2 = LpVariable("X2", lowBound=0, upBound=100, cat="Integer")
+            Y1 = LpVariable("Y1", lowBound=0, upBound=100, cat="Integer")
+            Y2 = LpVariable("Y2", lowBound=0, upBound=100, cat="Integer")
 
             problem += X2 + Y2, "Objective"
             problem += x1 * X1 + x2 * X2 == x, "Constraint_X"
@@ -768,23 +769,41 @@ class AdventOfCode:
                 print("Optimization failed.")
                 return None , None
 
-        def find_tokens(nlp, limit=100):
+        def solve_lp_int_numpy(x1, y1, x2, y2, x, y):
+            a = Symbol("a", integer=True)
+            b = Symbol("b", integer=True)
+            # Remove for part 1
+            x += 10000000000000
+            y += 10000000000000
+            roots = solve(
+                [a * x1 + b * x2 - x, a * y1 + b * y2 - y],
+                [a, b],
+            )
+            return roots[a] * 3 + roots[b] if roots else 0
+
+        def find_tokens(nlp):
             final = 0
             for problem in nlp:
                 A = problem[0]
                 B = problem[1]
                 X = problem[2]
-                a_push , b_push = solve_lp_int(A[2], A[4], B[2], B[4], X[1], X[3], limit)
+                a_push , b_push = solve_lp_int(A[2], A[4], B[2], B[4], X[1], X[3])
                 if a_push is not None:
-                    tokens = a_push * 3 + b_push
-                    print(f"Tokens needed: {tokens}")
-                    final += tokens
+                    final +=  a_push * 3 + b_push
+            return final
+
+        def find_tokens_unbound(nlp):
+            final = 0
+            for problem in nlp:
+                A = problem[0]
+                B = problem[1]
+                X = problem[2]
+                final += solve_lp_int_numpy(A[2], A[4], B[2], B[4], X[1], X[3])
             return final
 
         nlp = parse_input()
         print(f"Part 1: {find_tokens(nlp)}")
-
-
+        print(f"Part 2: {find_tokens_unbound(nlp)}")
 
     def day15(self):
         dirs = Directions(self.rows, '#')
