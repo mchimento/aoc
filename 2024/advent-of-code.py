@@ -6,6 +6,7 @@ import heapq
 from directions import Directions
 from grid import Coordinate, Grid
 import time
+from collections import Counter
 
 class AdventOfCode:
 
@@ -592,36 +593,30 @@ class AdventOfCode:
         def split_in_half(s):
             mid = len(s) // 2
             return s[:mid], s[mid:]
-        def apply_rules(stone):
-            if stone in stones_dic:
-                return stones_dic[stone]
-            if (len(stone) % 2) == 0:
-                xs , ys = split_in_half(stone)
-                stone1 = xs.lstrip('0') or '0'
-                stone2 = ys.lstrip('0') or '0'
-                stones_dic[stone] = (stone1, stone2)
-                return stone1, stone2
-            else:
-                ret = str(int(stone)*2024) , None
-                stones_dic[stone] = ret
-                return ret
-        stones_dic = { '0' : ('1', None)}
-        def blink(times):
-            stones = self.rows
-            for _ in range(times):
-                new_stones = []
-                for stone in stones:
-                    s1 , s2 = apply_rules(stone)
-                    if s2 is not None:
-                        new_stones.append(s1)
-                        new_stones.append(s2)
+        def count_stones(blinks):
+            stones = self.int_list(self.rows)
+            stone_counts = Counter(stones)
+            for _ in range(blinks):
+                new_counts = Counter()
+                for stone, count in stone_counts.items():
+                    if stone == 0:
+                        new_counts[1] += count
+                    elif len(str(stone)) % 2 == 0:
+                        half_len = len(str(stone)) // 2
+                        left = int(str(stone)[:half_len])
+                        right = int(str(stone)[half_len:])
+                        new_counts[left] += count
+                        new_counts[right] += count
                     else:
-                        new_stones.append(s1)
-                stones = new_stones
-            return stones
+                        new_counts[stone * 2024] += count
+                stone_counts = new_counts
+
+            return sum(stone_counts.values())
+
         parse_input()
         start = time.time()
-        print(f"Part 1: {len(blink(38))}")
+        amount = count_stones(75)
+        print(f"Part 1: {amount}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
