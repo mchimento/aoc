@@ -1712,7 +1712,10 @@ class AdventOfCode:
             def adj_amount(chunk):
                 ret = 0
                 for i in range(len(chunk)-1):
-                    ret += 1 if is_adj(chunk[i], chunk[i+1]) else 0
+                    if is_adj(chunk[i], chunk[i+1]):
+                        ret += 1
+                        if chunk[i] == 'A':
+                            ret += 1
                 return ret
             keep = []
             adj = 0
@@ -1720,8 +1723,10 @@ class AdventOfCode:
                 if not keep:
                     keep = [chunks[i]]
                     adj = adj_amount(chunks[i])
+                    #print(f"adj amount intit {adj}")
                     continue
                 adj_amount_ch = adj_amount(chunks[i])
+                #print(f"adj amount {adj_amount_ch}")
                 if adj_amount_ch > adj:
                     adj = adj_amount_ch
                     keep = [chunks[i]]
@@ -1729,14 +1734,15 @@ class AdventOfCode:
                     continue
                 else:
                     keep.append(chunks[i])
+            #print(keep)
             return keep
 
         def filter_chunks(chunks):
             keep = []
             "chunks with more adjacents arrows in the same direction are cheaper to analyse"
             keep = filter_consecutive_adj(chunks)
-            "prioritize adjcents arrows"
-            keep = filter_on_priority_adj(chunks)
+            "prioritize adjcent arrows"
+            keep = filter_on_priority_adj(keep)
             return keep
 
         def robotpad_shortest_paths(numpad_paths):
@@ -1745,6 +1751,7 @@ class AdventOfCode:
             min_length = None
             for path in numpad_paths:
                 aux = []
+                current_len = 0
                 for end in path:
                     _ , paths = robot_pad_grid.shortest_paths(current, end, robot_pad, robot_pad_dirs)
                     if paths:
@@ -1753,24 +1760,30 @@ class AdventOfCode:
                             aux = keep
                         else:
                             aux = [xs + ys for xs in aux for ys in keep]
+                        current_len += len(keep[0])
+                    if  min_length is not None and current_len > min_length:
+                        break
                     current = mapping_robotpad[end]
                 if min_length is None:
                     min_length = len(aux[0])
                     ret += aux
                     continue
-                if len(aux[0]) < min_length:
-                    min_length = len(aux[0])
+                if current_len < min_length:
+                    min_length = current_len
                     ret = []
                 ret += aux
-            return filter_min(ret)
+            return filter_chunks(filter_min(ret))
 
         def complexities(limit=2):
             ret = 0
             for code in self.codes:
-                robot_paths = numpad_shortest_paths(code)
+                robot_paths = filter_chunks(numpad_shortest_paths(code))
+                #print(robot_paths)
                 for _ in range(limit):
-                    robot_paths = robotpad_shortest_paths(robot_paths)
-                    print(len(robot_paths))
+                    print(f"before {len(robot_paths)}")
+                    robot_paths = filter_chunks(robotpad_shortest_paths(robot_paths))
+                    #self.print_rows(robot_paths)
+                    print(f"after {len(robot_paths)}")
                 min_length = len(robot_paths[0])
                 code.pop()
                 code_int = int("".join(code))
@@ -1796,12 +1809,11 @@ class AdventOfCode:
         file_paths = args.file_paths
 
         # Process the file and get columns
-        #self.rows = self.process_data_as_rows(file_paths[0])
-        self.rows = self.process_data_as_string(file_paths[0], " ")
+        self.rows = self.process_data_as_rows(file_paths[0])
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day13()
+        self.day21()
 
 if __name__ == "__main__":
     main = AdventOfCode()
