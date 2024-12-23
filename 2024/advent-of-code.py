@@ -822,7 +822,7 @@ class AdventOfCode:
         def step_robot(id, height, width):
             x , y = robots[id]['p']
             vx , vy = robots[id]['v']
-            dx , dy = (x + vx) % width , (y + vy) % height
+            dx , dy = (x + vx) % height , (y + vy) % width
             robots[id]['p'] = dx , dy
         def move_robot(id, time, height, width):
             for _ in range(time):
@@ -847,12 +847,10 @@ class AdventOfCode:
 
         parse_input()
         start = time.time()
-        print(f"initial {robots}")
-        move_all_robots(5, 7, 11)
-        print(f"new {robots}")
-        sf = safety_factor(7, 11)
-        end = time.time()
+        move_all_robots(100, 103, 101)
+        sf = safety_factor(103, 101)
         print(f"Part 1: {sf}")
+        end = time.time()
         print(f"Execution time: {end - start} seconds")
 
     def day15(self):
