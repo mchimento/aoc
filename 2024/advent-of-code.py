@@ -1881,18 +1881,95 @@ class AdventOfCode:
         print(f"Execution time: {end - start} seconds")
 
     def day22(self):
-        self.secrets = []
+        self.secrets = {}
+        sequences = set()
         def parse_input():
-            self.secrets = self.int_list(self.rows)
-        def update_secret(secret):
-            step1 = secret ^ (secret * 64) % 16777216
-            step2 = step1 // 32
-            return
+            id = 0
+            for row in self.rows:
+                self.secrets[id] = [int(row)]
+                id += 1
+        def new_secret(secret):
+            step1 = ((secret * 64) ^ secret) % 16777216
+            step2 = ((step1 // 32) ^ step1) % 16777216
+            step3 = ((step2 * 2048) ^ step2) % 16777216
+            return step3
+        def get_buyers_secrets(amount):
+            for _ in range(amount):
+                for id , secrets in self.secrets.items():
+                    self.secrets[id].append(new_secret(secrets[-1]))
+        def sum_secrets(amount):
+            get_buyers_secrets(amount)
+            res = 0
+            for _ , secrets in self.secrets.items():
+                res += secrets[-1]
+            return res
+        def vars_and_max(prices):
+            vars = []
+            max_price_ix = []
+            max_price = 0
+            prev = 0
+            for i , price in enumerate(prices):
+                if i == 0:
+                    vars.append(0)
+                    prev = price
+                    continue
+                vars.append(price - prev)
+                prev = price
+                if i >= 4 and max_price < price:
+                    max_price_ix = [i]
+                    max_price = price
+                if i >= 4 and max_price == price:
+                    max_price_ix.append(i)
+            return vars , max_price_ix , max_price
+        def get_sequences(vars, max_price_ix):
+            for ix in max_price_ix:
+                sequence = vars[ix-3:ix+1]
+                sequences.add(tuple(sequence))
+        def get_prices():
+            for id , secrets in self.secrets.items():
+                data = {}
+                data['prices'] = list(map(lambda secret : secret % 10, secrets))
+                vars , max_price_ix , max_price = vars_and_max(data['prices'])
+                data['vars'] = vars
+                data['max_price_ix'] = max_price_ix
+                data['max_price'] = max_price
+                self.secrets[id] = data
+                get_sequences(vars, max_price_ix)
+        def find_sublist_indices(main_list, sub_list):
+            for i in range(len(main_list) - 3):
+                xs = main_list[i:i + 4]
+                if xs == sub_list:
+                    return i
+            return None
+        def count_bananas():
+            max_bananas = 0
+            for seq in sequences:
+                current_bananas = 0
+                for _ , data in self.secrets.items():
+                    ix = find_sublist_indices(data['vars'], list(seq))
+                    if ix is not None:
+                        current_bananas += data['prices'][ix+3]
+                max_bananas = max(max_bananas, current_bananas)
+            return max_bananas
 
         parse_input()
-        print(42 ^ 15)
-        print(100000000 % 16777216)
+        start = time.time()
+        #res = sum_secrets(2000)
+        #-2,1,-1,3
+        res = sum_secrets(2000)
+        get_prices()
         print(self.secrets)
+        print(sequences)
+        print(self.secrets[1]['vars'][642:646])
+        print(find_sublist_indices(self.secrets[0]['vars'], [-2,1,-1,3]))
+        print(find_sublist_indices(self.secrets[1]['vars'], [-2,1,-1,3]))
+        print(find_sublist_indices(self.secrets[2]['vars'], [-2,1,-1,3]))
+        print(find_sublist_indices(self.secrets[3]['vars'], [-2,1,-1,3]))
+        bananas = count_bananas()
+        print(bananas)
+        end = time.time()
+        print(f"Execution time: {end - start} seconds")
+        print(f"Part 1: {res}")
 
     def main(self):
         """
@@ -1905,12 +1982,12 @@ class AdventOfCode:
         file_paths = args.file_paths
 
         # Process the file and get columns
-        #self.rows = self.process_data_as_rows(file_paths[0])
-        self.rows = self.process_data_as_string(file_paths[0], "\n")
+        self.rows = self.process_data_as_rows(file_paths[0])
+        #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day14()
+        self.day22()
 
 if __name__ == "__main__":
     main = AdventOfCode()
