@@ -56,6 +56,10 @@ class AdventOfCode:
     def int_list(self, list_string):
         return [int(x) for x in list_string]
 
+    def print_to_file(self, s, file_path, type='a'):
+        with open(file_path, type) as file:
+            print(s, file=file)
+
     def split_str_by_fun(self, grid, fun):
         grid = [ fun(row) for row in grid ]
         return grid
@@ -592,9 +596,6 @@ class AdventOfCode:
     def day11(self):
         def parse_input():
             self.rows = self.rows[0].split(" ")
-        def split_in_half(s):
-            mid = len(s) // 2
-            return s[:mid], s[mid:]
         def count_stones(blinks):
             stones = self.int_list(self.rows)
             stone_counts = Counter(stones)
@@ -806,7 +807,7 @@ class AdventOfCode:
         print(f"Part 2: {find_tokens_unbound(nlp)}")
 
     def day14(self):
-        robots = {}
+        self.robots = {}
         self.robots_len = 0
         def parse_input():
             lines = self.rows.strip().split("\n")
@@ -816,40 +817,60 @@ class AdventOfCode:
                 p = p[1] , p[0]
                 v = tuple(map(int, parts[1].split('=')[1].split(',')))
                 v = v[1] , v[0]
-                robots[idx] = {'p': p, 'v': v}
+                self.robots[idx] = {'p': p, 'v': v}
                 self.robots_len += 1
 
         def step_robot(id, height, width):
-            x , y = robots[id]['p']
-            vx , vy = robots[id]['v']
+            x , y = self.robots[id]['p']
+            vx , vy = self.robots[id]['v']
             dx , dy = (x + vx) % height , (y + vy) % width
-            robots[id]['p'] = dx , dy
+            self.robots[id]['p'] = dx , dy
         def move_robot(id, time, height, width):
             for _ in range(time):
                 step_robot(id, height, width)
         def move_all_robots(time, height, width):
-            for id in robots:
+            for id in self.robots:
                 move_robot(id, time, height, width)
         def safety_factor(height, width):
             mid_h = (height - 1) // 2
             mid_v = (width - 1) // 2
-            print(mid_h, mid_v)
             q1 , q2 ,q3 , q4 = 0 , 0 , 0 , 0
-            for id in robots:
-                x , y = robots[id]['p']
+            for id in self.robots:
+                x , y = self.robots[id]['p']
                 if x < mid_h and y < mid_v: q1 += 1
                 elif x < mid_h and y > mid_v: q2 += 1
                 elif x > mid_h and y < mid_v: q3 += 1
                 elif x > mid_h and y > mid_v: q4 += 1
                 else: continue
-            ret = q1 * q2 * q3 * q4
-            return ret
+            return q1 * q2 * q3 * q4
+
+        def chek_christmas_tree(height, width):
+            def all_pos_unique(positions_count):
+                return all(count == 1 for count in positions_count.values())
+            time = 1647
+            self.robots = initial_robot.copy()
+            while time < 3:
+                time += 1
+                positions_count = Counter()
+                print(f"check time {time}")
+                move_all_robots(time, height, width)
+                for _, data in self.robots.items():
+                    positions_count[data['p']] += 1
+                print(self.robots)
+                print(positions_count)
+                if all_pos_unique(positions_count):
+                    return time
+            return -1
 
         parse_input()
+        self.print_to_file(str(self.robots), "output.txt")
+        initial_robot = self.robots.copy()
         start = time.time()
         move_all_robots(100, 103, 101)
         sf = safety_factor(103, 101)
-        print(f"Part 1: {sf}")
+        #print(f"Part 1: {sf}")
+        ch_time = chek_christmas_tree(103, 101)
+        print(f"Part 2: {ch_time}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
