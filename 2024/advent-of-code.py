@@ -805,6 +805,56 @@ class AdventOfCode:
         print(f"Part 1: {find_tokens(nlp)}")
         print(f"Part 2: {find_tokens_unbound(nlp)}")
 
+    def day14(self):
+        robots = {}
+        self.robots_len = 0
+        def parse_input():
+            lines = self.rows.strip().split("\n")
+            for idx, line in enumerate(lines, start=1):
+                parts = line.split()
+                p = tuple(map(int, parts[0].split('=')[1].split(',')))
+                p = p[1] , p[0]
+                v = tuple(map(int, parts[1].split('=')[1].split(',')))
+                v = v[1] , v[0]
+                robots[idx] = {'p': p, 'v': v}
+                self.robots_len += 1
+
+        def step_robot(id, height, width):
+            x , y = robots[id]['p']
+            vx , vy = robots[id]['v']
+            dx , dy = (x + vx) % width , (y + vy) % height
+            robots[id]['p'] = dx , dy
+        def move_robot(id, time, height, width):
+            for _ in range(time):
+                step_robot(id, height, width)
+        def move_all_robots(time, height, width):
+            for id in robots:
+                move_robot(id, time, height, width)
+        def safety_factor(height, width):
+            mid_h = (height - 1) // 2
+            mid_v = (width - 1) // 2
+            print(mid_h, mid_v)
+            q1 , q2 ,q3 , q4 = 0 , 0 , 0 , 0
+            for id in robots:
+                x , y = robots[id]['p']
+                if x < mid_h and y < mid_v: q1 += 1
+                elif x < mid_h and y > mid_v: q2 += 1
+                elif x > mid_h and y < mid_v: q3 += 1
+                elif x > mid_h and y > mid_v: q4 += 1
+                else: continue
+            ret = q1 * q2 * q3 * q4
+            return ret
+
+        parse_input()
+        start = time.time()
+        print(f"initial {robots}")
+        move_all_robots(5, 7, 11)
+        print(f"new {robots}")
+        sf = safety_factor(7, 11)
+        end = time.time()
+        print(f"Part 1: {sf}")
+        print(f"Execution time: {end - start} seconds")
+
     def day15(self):
         dirs = Directions(self.rows, '#')
         block = 'O'
@@ -1778,7 +1828,7 @@ class AdventOfCode:
             ret = 0
             for code in self.codes:
                 robot_paths = filter_chunks(numpad_shortest_paths(code))
-                #print(robot_paths)
+                print(robot_paths)
                 for _ in range(limit):
                     print(f"before {len(robot_paths)}")
                     robot_paths = filter_chunks(robotpad_shortest_paths(robot_paths))
@@ -1809,11 +1859,12 @@ class AdventOfCode:
         file_paths = args.file_paths
 
         # Process the file and get columns
-        self.rows = self.process_data_as_rows(file_paths[0])
+        #self.rows = self.process_data_as_rows(file_paths[0])
+        self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day21()
+        self.day14()
 
 if __name__ == "__main__":
     main = AdventOfCode()
