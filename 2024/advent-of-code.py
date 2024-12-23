@@ -9,6 +9,8 @@ import time
 from collections import Counter
 from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 from sympy import solve, Symbol
+import copy
+from sympy.ntheory.modular import solve_congruence
 
 class AdventOfCode:
 
@@ -808,7 +810,6 @@ class AdventOfCode:
 
     def day14(self):
         self.robots = {}
-        self.robots_len = 0
         def parse_input():
             lines = self.rows.strip().split("\n")
             for idx, line in enumerate(lines, start=1):
@@ -818,19 +819,16 @@ class AdventOfCode:
                 v = tuple(map(int, parts[1].split('=')[1].split(',')))
                 v = v[1] , v[0]
                 self.robots[idx] = {'p': p, 'v': v}
-                self.robots_len += 1
 
         def step_robot(id, height, width):
             x , y = self.robots[id]['p']
             vx , vy = self.robots[id]['v']
             dx , dy = (x + vx) % height , (y + vy) % width
             self.robots[id]['p'] = dx , dy
-        def move_robot(id, time, height, width):
-            for _ in range(time):
-                step_robot(id, height, width)
         def move_all_robots(time, height, width):
             for id in self.robots:
-                move_robot(id, time, height, width)
+                for _ in range(time):
+                    step_robot(id, height, width)
         def safety_factor(height, width):
             mid_h = (height - 1) // 2
             mid_v = (width - 1) // 2
@@ -844,35 +842,50 @@ class AdventOfCode:
                 else: continue
             return q1 * q2 * q3 * q4
 
+        def draw(height, width):
+            def get_positions():
+                pos = []
+                for _ , data in self.robots.items():
+                    pos += [data['p']]
+                return pos
+            grid = Grid()
+            grid.create_empty(height, width)
+            positions = get_positions()
+            grid.fill_grid(positions, '#')
+            for row in grid.grid:
+                self.print_to_file(''.join(row), "output.txt")
+            self.print_to_file(str(self.robots), "output.txt")
+            #grid.pretty_print_grid()
+
         def chek_christmas_tree(height, width):
-            def all_pos_unique(positions_count):
-                return all(count == 1 for count in positions_count.values())
-            time = 1647
-            self.robots = initial_robot.copy()
-            while time < 3:
+            """
+            by experimenting with draw you can see that:
+              - in iteration 6, 107, most robots align in the middle of the grid vertically
+              - in iteration 52, 155 most robots align in the middle of the grid horizontally
+              in other words:
+              - every 103 steps most robots tend to coverge in the y-axis
+              - every 101 steps most robots tend to converge in the x-axis
+            With this info we can use chinese remainder theorem to in infer at which moment both
+            will happen at the same time. At this moment we will have the tree
+            time = 5
+            while time < 7:
+                self.robots = copy.deepcopy(initial_robot)
+                self.print_to_file(f"iter {time}", "output.txt")
                 time += 1
-                positions_count = Counter()
-                print(f"check time {time}")
                 move_all_robots(time, height, width)
-                for _, data in self.robots.items():
-                    positions_count[data['p']] += 1
-                print(self.robots)
-                print(positions_count)
-                if all_pos_unique(positions_count):
-                    return time
-            return -1
+                draw(height, width)
+            """
+            remainders = [52, 6]
+            moduli = [103, 101]
+            result, _ = solve_congruence(*zip(remainders, moduli))
+            return result + 1
 
         parse_input()
-        self.print_to_file(str(self.robots), "output.txt")
-        initial_robot = self.robots.copy()
-        start = time.time()
         move_all_robots(100, 103, 101)
         sf = safety_factor(103, 101)
-        #print(f"Part 1: {sf}")
+        print(f"Part 1: {sf}")
         ch_time = chek_christmas_tree(103, 101)
         print(f"Part 2: {ch_time}")
-        end = time.time()
-        print(f"Execution time: {end - start} seconds")
 
     def day15(self):
         dirs = Directions(self.rows, '#')
@@ -1866,6 +1879,20 @@ class AdventOfCode:
         print(f"Part 2: {complexities(2)}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
+
+    def day22(self):
+        self.secrets = []
+        def parse_input():
+            self.secrets = self.int_list(self.rows)
+        def update_secret(secret):
+            step1 = secret ^ (secret * 64) % 16777216
+            step2 = step1 // 32
+            return
+
+        parse_input()
+        print(42 ^ 15)
+        print(100000000 % 16777216)
+        print(self.secrets)
 
     def main(self):
         """

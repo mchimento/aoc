@@ -21,6 +21,15 @@ class Grid:
                     return (x, y)
         return None
 
+    def create_empty(self, height, width):
+        self.grid = [["."] * width for _ in range(height)]
+
+    def fill_grid(self, positions, elem):
+        if positions is None:
+            return
+        for i, j in positions:
+            self.grid[i][j] = elem
+
     def print_grid(self, grid=None):
         to_print = self.grid
         if grid is not None:
