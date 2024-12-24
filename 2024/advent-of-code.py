@@ -1882,7 +1882,12 @@ class AdventOfCode:
 
     def day22(self):
         self.secrets = {}
+        self.prices = {}
+        self.variations = {}
+        self.sum_secrets = 0
         sequences = set()
+        self.seqs = {}
+        self.max_seq = None
         def parse_input():
             id = 0
             for row in self.rows:
@@ -1894,15 +1899,23 @@ class AdventOfCode:
             step3 = ((step2 * 2048) ^ step2) % 16777216
             return step3
         def get_buyers_secrets(amount):
-            for _ in range(amount):
+            last_secret = None
+            for i in range(amount):
                 for id , secrets in self.secrets.items():
-                    self.secrets[id].append(new_secret(secrets[-1]))
-        def sum_secrets(amount):
-            get_buyers_secrets(amount)
-            res = 0
-            for _ , secrets in self.secrets.items():
-                res += secrets[-1]
-            return res
+                    last_secret = new_secret(secrets[-1])
+                    if i == 0:
+                        self.secrets[id] = [last_secret]
+                        self.prices[id] = [last_secret % 10]
+                    else:
+                        self.secrets[id].append(last_secret)
+                        self.prices[id].append(last_secret % 10)
+                        vars , max_price_ix , max_price = vars_and_max(self.prices[id])
+                        self.variations[id] = {}
+                        self.variations[id]['vars'] = vars
+                        self.variations[id]['max_price_ix'] = max_price_ix
+                        self.variations[id]['max_price'] = max_price
+                    if i == amount -1:
+                        self.sum_secrets += last_secret
         def vars_and_max(prices):
             vars = []
             max_price_ix = []
@@ -1918,23 +1931,29 @@ class AdventOfCode:
                 if i >= 4 and max_price < price:
                     max_price_ix = [i]
                     max_price = price
-                if i >= 4 and max_price == price:
+                elif i >= 4 and max_price == price:
                     max_price_ix.append(i)
             return vars , max_price_ix , max_price
-        def get_sequences(vars, max_price_ix):
-            for ix in max_price_ix:
-                sequence = vars[ix-3:ix+1]
-                sequences.add(tuple(sequence))
-        def get_prices():
-            for id , secrets in self.secrets.items():
-                data = {}
-                data['prices'] = list(map(lambda secret : secret % 10, secrets))
-                vars , max_price_ix , max_price = vars_and_max(data['prices'])
-                data['vars'] = vars
-                data['max_price_ix'] = max_price_ix
-                data['max_price'] = max_price
-                self.secrets[id] = data
-                get_sequences(vars, max_price_ix)
+        def gen_sequences():
+            for _ , variation in self.variations.items():
+                vars , max_price_ix , max_price = variation['vars'], variation['max_price_ix'], variation['max_price']
+                for ix in max_price_ix:
+                    seq = tuple(vars[ix-3:ix+1])
+                    sequences.add(seq)
+                    if seq in self.seqs:
+                        self.seqs[seq] += max_price
+                    else:
+                        self.seqs[seq] = max_price
+                    new_price = self.seqs[seq]
+                    if self.max_seq is None:
+                        self.max_seq = seq , max_price
+                    else:
+                        seq_m , maxp_m = self.max_seq
+                        if seq_m == seq:
+                            self.max_seq = seq , new_price
+                        else:
+                            if maxp_m < new_price:
+                                self.max_seq = seq , new_price
         def find_sublist_indices(main_list, sub_list):
             for i in range(len(main_list) - 3):
                 xs = main_list[i:i + 4]
@@ -1954,22 +1973,20 @@ class AdventOfCode:
 
         parse_input()
         start = time.time()
-        #res = sum_secrets(2000)
+        get_buyers_secrets(2000)
         #-2,1,-1,3
-        res = sum_secrets(2000)
-        get_prices()
-        print(self.secrets)
-        print(sequences)
-        print(self.secrets[1]['vars'][642:646])
-        print(find_sublist_indices(self.secrets[0]['vars'], [-2,1,-1,3]))
-        print(find_sublist_indices(self.secrets[1]['vars'], [-2,1,-1,3]))
-        print(find_sublist_indices(self.secrets[2]['vars'], [-2,1,-1,3]))
-        print(find_sublist_indices(self.secrets[3]['vars'], [-2,1,-1,3]))
-        bananas = count_bananas()
-        print(bananas)
+        gen_sequences()
+        #print(self.secrets)
+        #print(self.prices)
+        #print(self.variations)
+        print(self.seqs)
+        #print(sequences)
+        print(self.max_seq)
+        #bananas = count_bananas()
+        #print(bananas)
         end = time.time()
         print(f"Execution time: {end - start} seconds")
-        print(f"Part 1: {res}")
+        print(f"Part 1: {self.sum_secrets}")
 
     def main(self):
         """
