@@ -1885,7 +1885,6 @@ class AdventOfCode:
         self.prices = {}
         self.variations = {}
         self.sum_secrets = 0
-        sequences = set()
         self.seqs = {}
         self.max_seq = None
         def parse_input():
@@ -1901,6 +1900,7 @@ class AdventOfCode:
         def get_buyers_secrets(amount):
             last_secret = None
             for i in range(amount):
+                print(f"run {i}")
                 for id , secrets in self.secrets.items():
                     last_secret = new_secret(secrets[-1])
                     if i == 0:
@@ -1934,42 +1934,40 @@ class AdventOfCode:
                 elif i >= 4 and max_price == price:
                     max_price_ix.append(i)
             return vars , max_price_ix , max_price
+        def check_seq_bananas(seq):
+            price = 0
+            for id , variation in self.variations.items():
+                vars = variation['vars']
+                ix = find_sublist_indices(vars, seq)
+                if ix is None:
+                    continue
+                else:
+                    price += self.prices[id][ix+3]
+            return price
         def gen_sequences():
-            for _ , variation in self.variations.items():
+            for id , variation in self.variations.items():
+                print(id)
                 vars , max_price_ix , max_price = variation['vars'], variation['max_price_ix'], variation['max_price']
                 for ix in max_price_ix:
-                    seq = tuple(vars[ix-3:ix+1])
-                    sequences.add(seq)
+                    seq_list = vars[ix-3:ix+1]
+                    seq = tuple(seq_list)
+                    price = check_seq_bananas(seq_list)
                     if seq in self.seqs:
-                        self.seqs[seq] += max_price
+                        continue
                     else:
-                        self.seqs[seq] = max_price
-                    new_price = self.seqs[seq]
+                        self.seqs[seq] = price
                     if self.max_seq is None:
-                        self.max_seq = seq , max_price
+                        self.max_seq = seq , price
                     else:
-                        seq_m , maxp_m = self.max_seq
-                        if seq_m == seq:
-                            self.max_seq = seq , new_price
-                        else:
-                            if maxp_m < new_price:
-                                self.max_seq = seq , new_price
+                        _ , maxp_m = self.max_seq
+                        if maxp_m < price:
+                            self.max_seq = seq , price
         def find_sublist_indices(main_list, sub_list):
             for i in range(len(main_list) - 3):
                 xs = main_list[i:i + 4]
                 if xs == sub_list:
                     return i
             return None
-        def count_bananas():
-            max_bananas = 0
-            for seq in sequences:
-                current_bananas = 0
-                for _ , data in self.secrets.items():
-                    ix = find_sublist_indices(data['vars'], list(seq))
-                    if ix is not None:
-                        current_bananas += data['prices'][ix+3]
-                max_bananas = max(max_bananas, current_bananas)
-            return max_bananas
 
         parse_input()
         start = time.time()
@@ -1979,7 +1977,7 @@ class AdventOfCode:
         #print(self.secrets)
         #print(self.prices)
         #print(self.variations)
-        print(self.seqs)
+        #print(self.seqs)
         #print(sequences)
         print(self.max_seq)
         #bananas = count_bananas()
@@ -1987,6 +1985,14 @@ class AdventOfCode:
         end = time.time()
         print(f"Execution time: {end - start} seconds")
         print(f"Part 1: {self.sum_secrets}")
+
+    def day24(self):
+        def parse_input():
+            self.print_rows(self.rows)
+            self.print_rows(self.gates)
+            return
+
+        parse_input()
 
     def main(self):
         """
@@ -2000,6 +2006,7 @@ class AdventOfCode:
 
         # Process the file and get columns
         self.rows = self.process_data_as_rows(file_paths[0])
+        self.gates = self.process_data_as_rows(file_paths[1])
         #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
