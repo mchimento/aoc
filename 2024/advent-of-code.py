@@ -2059,6 +2059,16 @@ class AdventOfCode:
                             swap_candidates.add(var)
             by_hand_check = { 'hhp', 'cnq', 'ptm' , 'gfj', 'jdr' , 'mps' , 'snv' , 'jgq' , 'dsj' , 'y14' , 'x14' , 'trn' , 'kvb'}
             swap_candidates = swap_candidates - by_hand_check
+            """
+            By using the previous code detect swap candidates and manually check the input for patterns we come to the conclusion that
+            the changes needed are cnk <-> qwf, vhm <-> z14 , mps <-> z27, msq <-> z39
+            Note that XOR and AND connect Xi and Yi with Zi, and the OR connects the sum with the followimg bits, e.g. z40 in the case below
+                y39 XOR x39 -> trn
+                x39 AND y39 -> mgb
+                gpm XOR trn -> msq
+                trn AND gpm -> z39
+                mgb OR msq -> cqt
+            """
 
             return e_bin == binary
 
