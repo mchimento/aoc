@@ -1883,6 +1883,7 @@ class AdventOfCode:
     def day22(self):
         self.secrets = {}
         self.prices = {}
+        self.max_price = {}
         self.variations = {}
         self.sum_secrets = 0
         self.seqs = {}
@@ -1903,24 +1904,22 @@ class AdventOfCode:
                 print(f"run {i}")
                 for id , secrets in self.secrets.items():
                     last_secret = new_secret(secrets[-1])
+                    price = last_secret % 10
                     if i == 0:
                         self.secrets[id] = [last_secret]
-                        self.prices[id] = [last_secret % 10]
+                        self.prices[id] = [price]
+                        self.max_price[id] = price
                     else:
                         self.secrets[id].append(last_secret)
-                        self.prices[id].append(last_secret % 10)
-                        vars , max_price_ix , max_price = vars_and_max(self.prices[id])
-                        self.variations[id] = {}
-                        self.variations[id]['vars'] = vars
-                        self.variations[id]['max_price_ix'] = max_price_ix
-                        self.variations[id]['max_price'] = max_price
+                        self.prices[id].append(price)
+                        self.max_price[id] = price if self.max_price[id] < price else self.max_price[id]
                     if i == amount -1:
+                        vars_and_max(self.prices[id], id)
                         self.sum_secrets += last_secret
-        def vars_and_max(prices):
+        def vars_and_max(prices, id):
             vars = []
-            max_price_ix = []
-            max_price = 0
             prev = 0
+            visited = set()
             for i , price in enumerate(prices):
                 if i == 0:
                     vars.append(0)
@@ -1928,12 +1927,30 @@ class AdventOfCode:
                     continue
                 vars.append(price - prev)
                 prev = price
-                if i >= 4 and max_price < price:
-                    max_price_ix = [i]
-                    max_price = price
-                elif i >= 4 and max_price == price:
-                    max_price_ix.append(i)
-            return vars , max_price_ix , max_price
+                if i >= 4:
+                    seq = tuple(vars[i-3:i+1])
+                    if seq in visited:
+                        continue
+                    else:
+                        visited.add(seq)
+                    if seq in self.seqs:
+                        self.seqs[seq]['price'] += price
+                        self.seqs[seq]['touches_max'] = self.seqs[seq]['touches_max'] or (price == self.max_price[id])
+                    else:
+                        self.seqs[seq] = {}
+                        self.seqs[seq]['price'] = price
+                        self.seqs[seq]['touches_max'] = price == self.max_price[id]
+                    new_price = self.seqs[seq]['price']
+                    is_max = self.seqs[seq]['touches_max']
+                    if self.max_seq is None and is_max:
+                        self.max_seq = seq , price
+                    elif self.max_seq is None:
+                        continue
+                    else:
+                        _ , maxp_m = self.max_seq
+                        if maxp_m < new_price and is_max:
+                            self.max_seq = seq , new_price
+            return vars
         def check_seq_bananas(seq):
             price = 0
             for id , variation in self.variations.items():
@@ -1944,24 +1961,6 @@ class AdventOfCode:
                 else:
                     price += self.prices[id][ix+3]
             return price
-        def gen_sequences():
-            for id , variation in self.variations.items():
-                print(id)
-                vars , max_price_ix , max_price = variation['vars'], variation['max_price_ix'], variation['max_price']
-                for ix in max_price_ix:
-                    seq_list = vars[ix-3:ix+1]
-                    seq = tuple(seq_list)
-                    price = check_seq_bananas(seq_list)
-                    if seq in self.seqs:
-                        continue
-                    else:
-                        self.seqs[seq] = price
-                    if self.max_seq is None:
-                        self.max_seq = seq , price
-                    else:
-                        _ , maxp_m = self.max_seq
-                        if maxp_m < price:
-                            self.max_seq = seq , price
         def find_sublist_indices(main_list, sub_list):
             for i in range(len(main_list) - 3):
                 xs = main_list[i:i + 4]
@@ -1970,21 +1969,9 @@ class AdventOfCode:
             return None
 
         parse_input()
-        start = time.time()
         get_buyers_secrets(2000)
-        #-2,1,-1,3
-        gen_sequences()
-        #print(self.secrets)
-        #print(self.prices)
-        #print(self.variations)
-        #print(self.seqs)
-        #print(sequences)
-        print(self.max_seq)
-        #bananas = count_bananas()
-        #print(bananas)
-        end = time.time()
-        print(f"Execution time: {end - start} seconds")
         print(f"Part 1: {self.sum_secrets}")
+        print(f"Part 2: {self.max_seq[1]}")
 
     def day24(self):
         def parse_input():
@@ -1993,6 +1980,10 @@ class AdventOfCode:
             return
 
         parse_input()
+        start = time.time()
+
+        end = time.time()
+        print(f"Execution time: {end - start} seconds")
 
     def main(self):
         """
@@ -2006,7 +1997,7 @@ class AdventOfCode:
 
         # Process the file and get columns
         self.rows = self.process_data_as_rows(file_paths[0])
-        self.gates = self.process_data_as_rows(file_paths[1])
+        #self.gates = self.process_data_as_rows(file_paths[1])
         #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
