@@ -1,10 +1,10 @@
 import argparse
 import re
 from itertools import groupby
-from collections import deque
+from collections import deque , defaultdict
 import heapq
 from directions import Directions
-from grid import Coordinate, Grid
+from grid import Grid
 import time
 from collections import Counter
 from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
@@ -1973,6 +1973,48 @@ class AdventOfCode:
         print(f"Part 1: {self.sum_secrets}")
         print(f"Part 2: {self.max_seq[1]}")
 
+    def day23(self):
+        self.graph = defaultdict(set)
+        def parse_input():
+            for row in self.rows:
+                c1 , c2 = re.split("-", row)
+                self.graph[c1].add(c2)
+                self.graph[c2].add(c1)
+        def find_computer_sets_of_3():
+            networks = set()
+            for pc in self.graph:
+                for neighbor in self.graph[pc]:
+                    common_neighbors = self.graph[pc] & self.graph[neighbor]
+                    for common in common_neighbors:
+                        if pc.startswith('t') or neighbor.startswith('t') or common.startswith('t'):
+                            triangle = tuple(sorted([pc, neighbor, common]))
+                            networks.add(triangle)
+            return networks
+
+        def bron_kerbosch(R, P, X, graph, cliques):
+            if not P and not X:
+                cliques.append(R)
+                return
+            for node in list(P):
+                bron_kerbosch(R | {node}, P & graph[node], X & graph[node], graph, cliques)
+                P.remove(node)
+                X.add(node)
+
+        # Find all maximal cliques
+        def find_maximal_cliques(graph):
+            cliques = []
+            nodes = set(graph.keys())
+            bron_kerbosch(set(), nodes, set(), graph, cliques)
+            return cliques
+
+        parse_input()
+        sets = find_computer_sets_of_3()
+        print(f"Part 1: {len(sets)}")
+        cliques = find_maximal_cliques(self.graph)
+        max_size = max(len(clique) for clique in cliques)
+        largest_cliques = sorted([clique for clique in cliques if len(clique) == max_size][0])
+        print(largest_cliques)
+
     def day24(self):
         def parse_input():
             for row in self.rows:
@@ -2069,7 +2111,6 @@ class AdventOfCode:
                 trn AND gpm -> z39
                 mgb OR msq -> cqt
             """
-
             return e_bin == binary
 
         self.variables = {}
@@ -2086,6 +2127,45 @@ class AdventOfCode:
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
+    def day25(self):
+        self.keys = []
+        self.locks = []
+        def get_pins(is_key, columns):
+            if is_key:
+                pins = []
+                for col in columns:
+                    ix = re.search(r'\.', col).start()
+                    pins.append(ix-1)
+                return pins
+            else:
+                pins = []
+                for col in columns:
+                    ix = re.search(r'\.', col[::-1]).start()
+                    pins.append(ix-1)
+                return pins
+        def parse_input():
+            for schematic in re.split("\n\n", self.rows):
+                scheme = re.split("\n", schematic)
+                columns = [''.join(column) for column in zip(*scheme)]
+                if scheme[0] == ('#' * len(scheme[0])):
+                    pins = get_pins(True, columns)
+                    self.keys.append(pins)
+                else:
+                    pins = get_pins(False, columns)
+                    self.locks.append(pins)
+        def fitting_pairs():
+            pairs = [ (x, y) for x in self.keys for y in self.locks ]
+            join_p = [ list(zip(p[0],p[1])) for p in pairs ]
+            length = len(self.keys[0])
+            count = 0
+            for xs in join_p:
+                if all(val <= length for val in list(map(lambda p : p[0]+p[1] , xs))):
+                    count += 1
+            return count
+
+        parse_input()
+        print(f"Part 1: {fitting_pairs()}")
+
     def main(self):
         """
         Main function to process command-line arguments and handle the file input.
@@ -2097,13 +2177,12 @@ class AdventOfCode:
         file_paths = args.file_paths
 
         # Process the file and get columns
-        self.rows = self.process_data_as_rows(file_paths[0])
-        self.gates = self.process_data_as_rows(file_paths[1])
-        #self.rows = self.process_data_as_string(file_paths[0], "\n")
+        #self.rows = self.process_data_as_rows(file_paths[0])
+        self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day24()
+        self.day25()
 
 if __name__ == "__main__":
     main = AdventOfCode()

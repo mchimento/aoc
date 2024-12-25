@@ -1,13 +1,6 @@
 from directions import Directions
 import heapq
 
-class Coordinate:
-
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.dir = None
-
 class Grid:
 
     def __init__(self, grid = None, dirs=None):
