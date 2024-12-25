@@ -11,6 +11,9 @@ from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 from sympy import solve, Symbol
 import copy
 from sympy.ntheory.modular import solve_congruence
+from functools import cache
+from itertools import combinations
+import math
 
 class AdventOfCode:
 
@@ -58,7 +61,7 @@ class AdventOfCode:
     def int_list(self, list_string):
         return [int(x) for x in list_string]
 
-    def print_to_file(self, s, file_path, type='a'):
+    def print_to_file(self, s, file_path="output.txt", type='a'):
         with open(file_path, type) as file:
             print(s, file=file)
 
@@ -451,7 +454,63 @@ class AdventOfCode:
         print(res)
 
     def day8(self):
-        return
+        self.nodes = defaultdict(list)
+        antinodes = set()
+        def parse_input():
+            self.rows = [ list(row) for row in self.rows ]
+        def get_nodes():
+            for i in range(len(self.rows)):
+                for j in range(len(self.rows[0])):
+                    if self.rows[i][j] != ".":
+                        self.nodes[self.rows[i][j]].append((i,j))
+        def check_antinode_part1(pr1, pr2):
+            x1, y1 = pr1
+            x2, y2 = pr2
+            newx = x2 + (x2 - x1)
+            newy = y2 + (y2 - y1)
+            if newx >= 0 and newx < len(self.rows) and newy >= 0 and newy < len(self.rows[0]):
+                antinodes.add((newx,newy))
+        def check_antinode_part2(pr1, pr2):
+            x1, y1 = pr1
+            x2, y2 = pr2
+            dx, dy = x2 - x1, y2 - y1
+            gcd = abs(math.gcd(dx, dy))
+            step_x, step_y = dx // gcd, dy // gcd
+            for direction in (-1, 1):  # Backward (-1) and forward (1) extensions
+                px, py = x1, y1
+                while 0 <= px < len(self.rows) and 0 <= py < len(self.rows):
+                    antinodes.add((px, py))
+                    px += direction * step_x
+                    py += direction * step_y
+            """
+            newx = x2 + (x2 - x1)
+            newy = y2 + (y2 - y1)
+            while newx >= 0 and newx < len(self.rows) and newy >= 0 and newy < len(self.rows[0]):
+                antinodes.add((newx,newy))
+                newx += (x2 - x1)
+                newy += (y2 - y1)
+            """
+        def get_antinodes(part2=False):
+            for node in self.nodes:
+                nodes = self.nodes[node]
+                for i in range(len(nodes)):
+                    for j in range(i):
+                        node1 = nodes[i]
+                        node2 = nodes[j]
+                        if part2:
+                            check_antinode_part2(node1, node2)
+                            check_antinode_part2(node2, node1)
+                        else:
+                            check_antinode_part1(node1, node2)
+                            check_antinode_part1(node2, node1)
+
+        parse_input()
+        get_nodes()
+        get_antinodes()
+        print(f"Part 1: {len(antinodes)}")
+        antinodes = set()
+        get_antinodes(True)
+        print(f"Part 2: {len(antinodes)}")
 
     def day9(self):
         map = {}
@@ -1728,7 +1787,7 @@ class AdventOfCode:
             current = mapping_numpad['A']
             for end in code:
                 _ , paths = num_pad_grid.shortest_paths(current, end, num_pad, num_pad_dirs)
-                keep = filter_chunks(list(map(lambda xs: transform_coord(xs, num_pad_dirs), paths)))
+                keep = list(map(lambda xs: transform_coord(xs, num_pad_dirs), paths))
                 if not ret:
                     ret = keep
                 else:
@@ -1827,11 +1886,38 @@ class AdventOfCode:
             keep = filter_on_priority_adj(keep)
             return keep
 
-        def robotpad_shortest_paths(numpad_paths):
+        @cache
+        def get_count(from_, to):
+            if (from_ == to):
+                return 0
+            match from_ , to:
+                case 'A' , robot_pad_dirs.down : return 2
+                case 'A' , robot_pad_dirs.left : return 3
+                case robot_pad_dirs.up , robot_pad_dirs.left : return 2
+                case robot_pad_dirs.up , robot_pad_dirs.right : return 2
+                case robot_pad_dirs.right , robot_pad_dirs.up : return 2
+                case robot_pad_dirs.right , robot_pad_dirs.left : return 2
+                case robot_pad_dirs.down , 'A' : return 2
+                case robot_pad_dirs.left , robot_pad_dirs.up : return 2
+                case robot_pad_dirs.left , robot_pad_dirs.right : return 2
+                case robot_pad_dirs.left , 'A' : return 3
+                case _ , _ : return 1
+        def step_count(path):
+            count = 0
+            current = 'A'
+            self.print_to_file(f"Path to check {path}")
+            for step in path:
+                self.print_to_file(f"from {current} to {step} there is {get_count(current, step)} steps")
+                count += get_count(current, step)
+                current = step
+            self.print_to_file(f"Final {count}")
+            return count
+
+        def robotpad_shortest_paths(robot_paths):
             ret = []
             current = mapping_robotpad['A']
             min_length = None
-            for path in numpad_paths:
+            for path in robot_paths:
                 aux = []
                 current_len = 0
                 for end in path:
@@ -1856,14 +1942,48 @@ class AdventOfCode:
                 ret += aux
             return filter_chunks(filter_min(ret))
 
+        dir_base_lookup = {
+            ('A', 'A'): 'A',
+            ('^', '^'): 'A',
+            ('>', '>'): 'A',
+            ('v', 'v'): 'A',
+            ('<', '<'): 'A',
+            ('A', '^'): '<A',
+            ('^', 'A'): '>A',
+            ('A', '>'): 'vA',
+            ('>', 'A'): '^A',
+            ('v', '^'): '^A',
+            ('^', 'v'): 'vA',
+            ('v', '<'): '<A',
+            ('<', 'v'): '>A',
+            ('v', '>'): '>A',
+            ('>', 'v'): '<A',
+
+            ('A', 'v'): '<vA',
+            ('v', 'A'): '^>A',
+            ('A', '<'): 'v<<A',
+            ('<', 'A'): '>>^A',
+
+            ('>', '<'): '<<A',
+            ('<', '>'): '>>A',
+            ('<', '^'): '>^A',
+            ('^', '<'): 'v<A',
+            ('>', '^'): '<^A',
+            ('^', '>'): 'v>A',
+        }
+
         def complexities(limit=2):
             ret = 0
             for code in self.codes:
+                robot_paths = numpad_shortest_paths(code)
+                print(robot_paths)
                 robot_paths = filter_chunks(numpad_shortest_paths(code))
                 print(robot_paths)
+                print(list(map(step_count , robot_paths)))
                 for _ in range(limit):
                     print(f"before {len(robot_paths)}")
                     robot_paths = filter_chunks(robotpad_shortest_paths(robot_paths))
+                    print(list(map(step_count , robot_paths)))
                     #self.print_rows(robot_paths)
                     print(f"after {len(robot_paths)}")
                 min_length = len(robot_paths[0])
@@ -2177,12 +2297,12 @@ class AdventOfCode:
         file_paths = args.file_paths
 
         # Process the file and get columns
-        #self.rows = self.process_data_as_rows(file_paths[0])
-        self.rows = self.process_data_as_string(file_paths[0], "\n")
+        self.rows = self.process_data_as_rows(file_paths[0])
+        #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day25()
+        self.day8()
 
 if __name__ == "__main__":
     main = AdventOfCode()
