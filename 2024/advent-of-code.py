@@ -1577,7 +1577,7 @@ class AdventOfCode:
                     steps = dist
                     while current is not None:
                         path.append(current)
-                        self.steps_count[current] = steps
+                        self.steps_count[(current[0], current[1])] = steps
                         steps -= 1
                         self.path_set.add((current[0], current[1]))
                         current = parent.get(current)
@@ -1594,157 +1594,39 @@ class AdventOfCode:
                             parent[(nx, ny, ndir)] = (x, y, dir)
             return None , None
 
-        def cheat_to_path(x, y, dir, path, visited):
-            dc = dirs.rotate90_clockwise(dir)
-            dac = dirs.rotate90_anticlockwise(dir)
-            dinv = dirs.turn_around(dir)
-            #with open("output.txt", "a") as file:
-            #    print(f"Candidaties position to jump {(x, y, dc)} and {(x, y, dac)} and {(x, y, dinv)}", file=file)
-            if (x, y, dc) in path and not (x, y, dc) in visited:
-                return (x, y, dc)
-            elif (x, y, dac) in path and not (x, y, dac) in visited:
-                return (x, y, dac)
-            elif (x, y, dinv) in path and not (x, y, dinv) in visited:
-                return (x, y, dinv)
-            else:
-                return None
-
-        def cheat_step(x, y, dir, path, visited, limit):
-            rows = len(self.rows) - 1
-            cols = len(self.rows[0]) - 1
-            #with open("output.txt", "a") as file:
-            #    print(f"Apply from node {(x,y)}", file=file)
-            x_iter , y_iter = x , y
-            for i in range(limit+1):
-                dx , dy = dirs.coord(dir)
-                nx, ny = x_iter + dx , y_iter + dy
-                if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
-                    x_iter , y_iter = nx , ny
-                    continue
-                elif 0 <= nx < rows and 0 <= ny < cols:
-                    #with open("output.txt", "a") as file:
-                    #    print(f"Check cheat at {nx, ny, dir}", file=file)
-                    return cheat_to_path(nx, ny, dir, path, visited) , i+1
-                else:
-                    break
-            return None , None
-
-        def cheat_step_new(candidate, steps, path, visited):
-            rows = len(self.rows) - 1
-            cols = len(self.rows[0]) - 1
-            x , y, dir, _ = candidate
-            hitted_wall = set()
-            cheats = set()
-            with open("output.txt", "a") as file:
-                print(f"checking candidate {x , y , dir}", file=file)
-            for d in dirs.directions:
-                dx , dy = dirs.coord(d)
-                nx, ny = x + dx , y + dy
-                with open("output.txt", "a") as file:
-                    print(f"Check cheat at {nx, ny, d}", file=file)
-                if 0 <= nx < rows and 0 <= ny < cols and self.rows[nx][ny] == dirs.wall:
-                    with open("output.txt", "a") as file:
-                        print(f"Hits wall", file=file)
-                    hitted_wall.add((nx, ny, d, steps))
-                elif 0 <= nx < rows and 0 <= ny < cols:
-                    with open("output.txt", "a") as file:
-                        print(f"Getting cheat", file=file)
-                    cheat = cheat_to_path(nx, ny, d, path, visited)
-                    if cheat is not None:
-                        xc , yc, dirc = cheat
-                        with open("output.txt", "a") as file:
-                            print(f"Cheat at {xc , yc, dirc}", file=file)
-                        cheats.add((xc , yc, dirc, steps))
-                else:
-                    with open("output.txt", "a") as file:
-                        print(f"No new candidates", file=file)
-                    continue
-            return cheats , hitted_wall
-
-        def cheat_path(x , y, dir, limit, path, visited):
-            candidates = set()
-            candidates = [(x, y, dir, 0)]
-            cheats = set()
-            for i in range(limit):
-                with open("output.txt", "a") as file:
-                        print(f"cheat_path iter {i}", file=file)
-                if not candidates:
-                    break
-                new_candidates = set()
-                for candidate in candidates:
-                    new_steps , hitted_wall = cheat_step_new(candidate, i+1, path, visited)
-                    new_candidates = new_candidates | hitted_wall
-                    with open("output.txt", "a") as file:
-                        print(f"New candidates {hitted_wall}", file=file)
-                        print(f"New cheats {new_steps}", file=file)
-                    cheats = cheats | new_steps
-                candidates = new_candidates
-            return cheats
-
-        def check_step_saved(current, new_step, steps_taken):
-            c_start = self.steps_count[current]
-            c_end = self.steps_count[new_step]
+        def check_steps(current, new_step):
+            c_start = self.steps_count[(current[0], current[1])]
+            c_end = self.steps_count[(new_step[0], new_step[1])]
             steps = c_end - c_start
-            return steps - steps_taken
+            return steps
+
+        def reachable_nodes(x, y, distance, visited):
+            reachable = []
+            for dx in range(-distance, distance + 1):
+                dy = distance - abs(dx)
+                nx , ny = x + dx , y + dy
+                if not (nx, ny) in visited and (nx, ny) in self.path_set:
+                    reachable.append((nx, ny))
+                if dy != 0:
+                    if not (nx, y-dy) in visited and (nx, y-dy) in self.path_set:
+                        reachable.append((nx, y - dy))
+            return reachable
 
         def cheats_run(path, limit, picos_lb):
             cheats = {}
+            visited = set()
             for i , step in enumerate(path):
                 x , y , dir = step
-                #with open("output.txt", "a") as file:
-                #    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
-                visited = path[:i+1]
-                for d in dirs.directions:
-                    new_step , steps_taken = cheat_step(x, y, d, path, visited, limit)
-                    if new_step is not None:
-                        picoseconds = check_step_saved(step, new_step, steps_taken)
-                        #with open("output.txt", "a") as file:
-                        #    print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
-                        #    print(f"Savings: {picoseconds} steps.", file=file)
-                        if picoseconds in cheats:
-                            a , b = cheats[picoseconds]
-                            b.append(new_step)
-                            cheats[picoseconds] = (a+1, b)
-                        else:
-                            cheats[picoseconds] = (1, [new_step])
-                    #with open("output.txt", "a") as file:
-                    #    print(f"No cheats applicable for candidate", file=file)
-            return cheats
-
-        def check_step_saved_new(path, ix, cheats):
-            cell_ind = -1
-            unvisited = path[ix+1:]
-            picos =[]
-            for cheat in cheats:
-                x , y, dir, n = cheat
-                for i , step in enumerate(unvisited):
-                    if step != (x, y, dir):
-                        continue
-                    cell_ind = i
-                picos.append((cell_ind - n + 1, (x,y)))
-            return picos
-
-        def cheats_run_new(path, limit):
-            cheats = {}
-            for i , step in enumerate(path):
-                x , y , dir = step
-                with open("output.txt", "a") as file:
-                    print(f"\ncheck step {x , y , dir}, iter {i}", file=file)
-                visited = path[:i+1]
-                cheats_found = cheat_path(x, y, dir, limit, path, visited)
-                picoseconds = check_step_saved_new(path, i, cheats_found)
-                with open("output.txt", "a") as file:
-                    print(f"Cheats found {cheats_found}", file=file)
-                    print(f"Steps calculation: {picoseconds}", file=file)
-                for picos , new_step in picoseconds:
-                    if picos in cheats:
-                        a , b = cheats[picos]
-                        b.append(new_step)
-                        cheats[picos] = (a+1, b)
+                visited.add((x,y))
+                nodes = reachable_nodes(x,y,limit,visited)
+                for node in nodes:
+                    picoseconds = check_steps(step, node) - grid.manhattan_distance((x,y), node)
+                    if picoseconds in cheats:
+                        a , b = cheats[picoseconds]
+                        b.append(node)
+                        cheats[picoseconds] = (a+1, b)
                     else:
-                        cheats[picos] = (1, [new_step])
-            with open("output.txt", "a") as file:
-                print(f"No cheats applicable for candidate", file=file)
+                        cheats[picoseconds] = (1, [node])
             return cheats
 
         def picos_below_limit(picos, limit):
@@ -1770,7 +1652,7 @@ class AdventOfCode:
         #sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
         #print(sorted_dict)
         print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
-        print(f"Part 1: {"coming soon"}")
+        print(f"Part 2: {"coming soon"}")
 
     def day21(self):
         def parse_input():
