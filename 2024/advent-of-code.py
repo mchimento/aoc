@@ -1553,6 +1553,7 @@ class AdventOfCode:
 
     def day20(self):
         dirs = Directions(self.rows, wall="#")
+        self.path_set = set()
         def parse_input():
             self.rows = [ list(row) for row in self.rows ]
         def get_initial_dir(start_x, start_y):
@@ -1573,8 +1574,12 @@ class AdventOfCode:
                 if self.rows[x][y] == 'E':
                     path = []
                     current = (x, y, dir)
+                    steps = dist
                     while current is not None:
                         path.append(current)
+                        self.steps_count[current] = steps
+                        steps -= 1
+                        self.path_set.add((current[0], current[1]))
                         current = parent.get(current)
                     return dist, path[::-1]
                 visited.add((x, y, dir))
@@ -1676,19 +1681,13 @@ class AdventOfCode:
                 candidates = new_candidates
             return cheats
 
-        def check_step_saved(path, ix, cell, steps_taken):
-            cell_ind = -1
-            unvisited = path[ix+1:]
-            for i , step in enumerate(unvisited):
-                if step != cell:
-                    continue
-                cell_ind = i
-            #with open("output.txt", "a") as file:
-            #    print(f"Before steps {cell_ind}", file=file)
-            #    print(f"Now steps {steps_taken}", file=file)
-            return cell_ind - steps_taken + 1
+        def check_step_saved(current, new_step, steps_taken):
+            c_start = self.steps_count[current]
+            c_end = self.steps_count[new_step]
+            steps = c_end - c_start
+            return steps - steps_taken
 
-        def cheats_run(path, limit):
+        def cheats_run(path, limit, picos_lb):
             cheats = {}
             for i , step in enumerate(path):
                 x , y , dir = step
@@ -1698,7 +1697,7 @@ class AdventOfCode:
                 for d in dirs.directions:
                     new_step , steps_taken = cheat_step(x, y, d, path, visited, limit)
                     if new_step is not None:
-                        picoseconds = check_step_saved(path, i, new_step, steps_taken)
+                        picoseconds = check_step_saved(step, new_step, steps_taken)
                         #with open("output.txt", "a") as file:
                         #    print(f"Jump to step {new_step}, reached in {steps_taken} steps.", file=file)
                         #    print(f"Savings: {picoseconds} steps.", file=file)
@@ -1752,16 +1751,24 @@ class AdventOfCode:
             count = 0
             for d in picos:
                 if d >= limit:
-                    count += picos[d]
+                    count += picos[d][0]
             return count
 
         parse_input()
-        self.start = self.get_initial_pos('S')
+        self.steps_count = defaultdict(int)
+        grid = Grid(self.rows)
+        self.start = grid.get_elem_pos('S')
+        self.end = grid.get_elem_pos('E')
+        print(f"Distance from S to E {grid.manhattan_distance(self.start, self.end)}")
         self.start_dir = get_initial_dir(self.start[0], self.start[1])
+        start = time.time()
         _ , path = shortest_path(self.start[0], self.start[1], self.start_dir)
-        saved_picos = cheats_run_new(path, 2)
-        sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
-        print(sorted_dict)
+        saved_picos = cheats_run(path, 2, 100)
+        end = time.time()
+        print(f"Execution time: {end - start} seconds")
+        #print(saved_picos)
+        #sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
+        #print(sorted_dict)
         print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
         print(f"Part 1: {"coming soon"}")
 
@@ -2214,7 +2221,6 @@ class AdventOfCode:
                 else:
                     key = f"z{i}"
                 expected_out[key] = z_bin[i]
-            sorted_expected_out =  {key: expected_out[key] for key in sorted(expected_out, reverse=True)}
             e_int = to_int(expected_out)
             e_bin = bin(e_int)[2:]
             print("expected")
@@ -2321,7 +2327,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day12()
+        self.day20()
 
 if __name__ == "__main__":
     main = AdventOfCode()

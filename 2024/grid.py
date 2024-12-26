@@ -37,6 +37,18 @@ class Grid:
         for row in to_print:
             print(''.join(row))
 
+    def manhattan_distance(self, point1, point2):
+        """
+        Calculate the Manhattan distance between two points,
+        i.e. distance between two points in a grid-based system
+        moving only horizontally and vertically.
+
+        Parameters:
+        - point1 (tuple): Coordinates of the first point (x1, y1).
+        - point2 (tuple): Coordinates of the second point (x2, y2).
+        """
+        return sum(abs(a - b) for a, b in zip(point1, point2))
+
     def shortest_paths_rot(self, start, end, start_dir, grid, dirs):
         """
         Shortest path algorithm including directations and rotations
@@ -86,7 +98,7 @@ class Grid:
 
     def shortest_paths(self, start, end, grid, dirs):
         """
-        Shortest path algorithm
+        General shortest path algorithm
         """
         pq = []
         parent = {}
