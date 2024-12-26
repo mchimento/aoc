@@ -685,8 +685,10 @@ class AdventOfCode:
         print(f"Execution time: {end - start} seconds")
 
     def day12(self):
+        def parse_input():
+            self.rows = [ list(row) for row in self.rows ]
         def check_plot_after(x, y, plant):
-            if y + 1 < len(self.columns):
+            if y + 1 < len(self.rows[0]):
                 return plant == self.rows[x][y+1]
             else:
                 return False
@@ -733,7 +735,7 @@ class AdventOfCode:
             regions = []
             plant = None
             for x in range(0, len(self.rows)):
-                for y in range(0, len(self.columns)):
+                for y in range(0, len(self.rows[0])):
                     if self.rows[x][y] is None:
                         continue
                     plant = self.rows[x][y]
@@ -756,16 +758,33 @@ class AdventOfCode:
                     total -= 1
             return total
         def sides(region):
-            print(region)
-            print(f"perimeter: {perimeter(region[0])}")
-            return 1
+            sides = 0
+            for (x, y) in region:
+                left , right , above , below = x - 1 , x + 1, y - 1, y + 1
+                right_not_in_region = (right, y) not in region
+                below_not_region = (x, below) not in region
 
+                if (x, above) not in region:
+                    if right_not_in_region or (right, above) in region:
+                        sides += 1
+                if (x, below) not in region:
+                    if right_not_in_region or (right, below) in region:
+                        sides += 1
+                if (left, y) not in region:
+                    if below_not_region or (left, below) in region:
+                        sides += 1
+                if (right, y) not in region:
+                    if below_not_region or (right, below) in region:
+                        sides += 1
+            return sides
+
+        parse_input()
         regions = getRegions()
         part1 = 0
         part2 = 0
         for region in regions:
             part1 += area(region[0]) * perimeter(region[0])
-            part2 += area(region[0]) * sides(region)
+            part2 += area(region[0]) * sides(region[0])
         print(f"Part 1: {part1}")
         print(f"Part 2: {part2}")
 
@@ -2302,7 +2321,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day8()
+        self.day12()
 
 if __name__ == "__main__":
     main = AdventOfCode()

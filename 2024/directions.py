@@ -1,5 +1,5 @@
 class Directions:
-    def __init__(self, grid, wall = None, empty='.'):
+    def __init__(self, grid=None, wall = None, empty='.'):
         self.up = '^'
         self.down = 'v'
         self.left = '<'
