@@ -37,6 +37,20 @@ class Grid:
         for row in to_print:
             print(''.join(row))
 
+    def reachable_nodes(self, x, y, max_dist, height=None, width=None):
+            reachable = []
+            if height is None:
+                height , width = len(self.grid) , len(self.grid[0])
+            for dx in range(-max_dist, max_dist + 1):
+                remaining_dist = max_dist - abs(dx)
+                for dy in range(-remaining_dist, remaining_dist + 1):
+                    if dx == dy == 0:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < height and 0 <= ny < width:
+                        reachable.append((nx, ny))
+            return reachable
+
     def manhattan_distance(self, point1, point2):
         """
         Calculate the Manhattan distance between two points,

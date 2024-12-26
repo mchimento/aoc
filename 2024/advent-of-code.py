@@ -1613,18 +1613,6 @@ class AdventOfCode:
                         reachable.append((nx, ny))
             return reachable
 
-        def reachable_nodes_alt(x, y, max_dist):
-            reachable = []
-            for dx in range(-max_dist, max_dist + 1):
-                remaining_dist = max_dist - abs(dx)
-                for dy in range(-remaining_dist, remaining_dist + 1):
-                    if dx == dy == 0:
-                        continue
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < len(self.rows) and 0 <= ny < len(self.rows[0]):
-                        reachable.append((nx, ny))
-            return reachable
-
         def cheats_run(path, limit):
             cheats = {}
             visited = set()
