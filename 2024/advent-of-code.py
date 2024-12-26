@@ -1600,19 +1600,32 @@ class AdventOfCode:
             steps = c_end - c_start
             return steps
 
-        def reachable_nodes(x, y, distance, visited):
+        def reachable_nodes(x, y, max_dist, visited):
             reachable = []
-            for dx in range(-distance, distance + 1):
-                dy = distance - abs(dx)
-                nx , ny = x + dx , y + dy
-                if not (nx, ny) in visited and (nx, ny) in self.path_set:
-                    reachable.append((nx, ny))
-                if dy != 0:
-                    if not (nx, y-dy) in visited and (nx, y-dy) in self.path_set:
-                        reachable.append((nx, y - dy))
+            for dx in range(-max_dist, max_dist + 1):
+                remaining_dist = max_dist - abs(dx)
+                for dy in range(-remaining_dist, remaining_dist + 1):
+                    if dx == dy == 0:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < len(self.rows) and 0 <= ny < len(self.rows[0]) \
+                        and self.rows[nx][ny] in '.SE' and not (nx, ny) in visited:
+                        reachable.append((nx, ny))
             return reachable
 
-        def cheats_run(path, limit, picos_lb):
+        def reachable_nodes_alt(x, y, max_dist):
+            reachable = []
+            for dx in range(-max_dist, max_dist + 1):
+                remaining_dist = max_dist - abs(dx)
+                for dy in range(-remaining_dist, remaining_dist + 1):
+                    if dx == dy == 0:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < len(self.rows) and 0 <= ny < len(self.rows[0]):
+                        reachable.append((nx, ny))
+            return reachable
+
+        def cheats_run(path, limit):
             cheats = {}
             visited = set()
             for i , step in enumerate(path):
@@ -1645,14 +1658,14 @@ class AdventOfCode:
         self.start_dir = get_initial_dir(self.start[0], self.start[1])
         start = time.time()
         _ , path = shortest_path(self.start[0], self.start[1], self.start_dir)
-        saved_picos = cheats_run(path, 2, 100)
+        picos_part1 = cheats_run(path, 2)
+        picos_part2 = cheats_run(path, 20)
         end = time.time()
         print(f"Execution time: {end - start} seconds")
-        #print(saved_picos)
-        #sorted_dict = {k: saved_picos[k] for k in sorted(saved_picos)}
-        #print(sorted_dict)
-        print(f"Part 1: {picos_below_limit(saved_picos, 100)}")
-        print(f"Part 2: {"coming soon"}")
+        print(f"Part 1: {picos_below_limit(picos_part1, 100)}")
+        print(f"Part 2: {picos_below_limit(picos_part2, 100)}")
+        print(reachable_nodes_alt(1,2,2))
+        print(reachable_nodes_alt(3,5,3))
 
     def day21(self):
         def parse_input():
