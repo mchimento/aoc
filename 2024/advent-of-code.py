@@ -1642,18 +1642,12 @@ class AdventOfCode:
         grid = Grid(self.rows)
         self.start = grid.get_elem_pos('S')
         self.end = grid.get_elem_pos('E')
-        print(f"Distance from S to E {grid.manhattan_distance(self.start, self.end)}")
         self.start_dir = get_initial_dir(self.start[0], self.start[1])
-        start = time.time()
         _ , path = shortest_path(self.start[0], self.start[1], self.start_dir)
         picos_part1 = cheats_run(path, 2)
         picos_part2 = cheats_run(path, 20)
-        end = time.time()
-        print(f"Execution time: {end - start} seconds")
         print(f"Part 1: {picos_below_limit(picos_part1, 100)}")
         print(f"Part 2: {picos_below_limit(picos_part2, 100)}")
-        print(reachable_nodes_alt(1,2,2))
-        print(reachable_nodes_alt(3,5,3))
 
     def day21(self):
         def parse_input():
@@ -1702,156 +1696,9 @@ class AdventOfCode:
                 else:
                     ret = [xs + ys for xs in ret for ys in keep]
                 current = mapping_numpad[end]
-            return filter_min(ret)
+            return ret
 
-        def filter_min(paths):
-            length = 0
-            keep = []
-            for path in paths:
-                path_len = len(path)
-                if length == 0:
-                    length = path_len
-                    keep.append(path)
-                else:
-                    if path_len > length:
-                        continue
-                    else:
-                        keep.append(path)
-            return keep
-
-        def filter_consecutive_adj(chunks):
-            def points(dir):
-                match dir:
-                    case num_pad_dirs.right: return 4
-                    case num_pad_dirs.up: return 3
-                    case num_pad_dirs.down: return 2
-                    case num_pad_dirs.left: return 1
-                    case _: return 5
-            def count_adj(xs):
-                count = 0
-                for i in range(len(xs)-1):
-                    if xs[i] == xs[i+1]:
-                        count += points(xs[i])
-                return count
-            keep = []
-            max_adj = 0
-            for chunk in chunks:
-                n = count_adj(chunk)
-                if n > 0:
-                    if n > max_adj:
-                        max_adj = n
-                        keep = [chunk]
-                    elif n == max_adj:
-                        keep.append(chunk)
-                    else:
-                        continue
-            if not keep:
-                return chunks
-            else:
-                return keep
-
-        def filter_on_priority_adj(chunks):
-            def is_adj(dir1, dir2):
-                x1 , y1 = mapping_robotpad[dir1]
-                x2 , y2 = mapping_robotpad[dir2]
-                if dir1 == dir2:
-                    return True
-                else:
-                    return x1 == x2 and (y1 + 1 == y2 or y1 == y2 + 1) \
-                           or y1 == y2 and (x1 + 1 == x2 or x1 == x2 + 1)
-            def adj_amount(chunk):
-                ret = 0
-                for i in range(len(chunk)-1):
-                    if is_adj(chunk[i], chunk[i+1]):
-                        ret += 1
-                        if chunk[i] == 'A':
-                            ret += 1
-                return ret
-            keep = []
-            adj = 0
-            for i in range(len(chunks)):
-                if not keep:
-                    keep = [chunks[i]]
-                    adj = adj_amount(chunks[i])
-                    #print(f"adj amount intit {adj}")
-                    continue
-                adj_amount_ch = adj_amount(chunks[i])
-                #print(f"adj amount {adj_amount_ch}")
-                if adj_amount_ch > adj:
-                    adj = adj_amount_ch
-                    keep = [chunks[i]]
-                elif adj_amount_ch < adj:
-                    continue
-                else:
-                    keep.append(chunks[i])
-            #print(keep)
-            return keep
-
-        def filter_chunks(chunks):
-            keep = []
-            "chunks with more adjacents arrows in the same direction are cheaper to analyse"
-            keep = filter_consecutive_adj(chunks)
-            "prioritize adjcent arrows"
-            keep = filter_on_priority_adj(keep)
-            return keep
-
-        @cache
-        def get_count(from_, to):
-            if (from_ == to):
-                return 0
-            match from_ , to:
-                case 'A' , robot_pad_dirs.down : return 2
-                case 'A' , robot_pad_dirs.left : return 3
-                case robot_pad_dirs.up , robot_pad_dirs.left : return 2
-                case robot_pad_dirs.up , robot_pad_dirs.right : return 2
-                case robot_pad_dirs.right , robot_pad_dirs.up : return 2
-                case robot_pad_dirs.right , robot_pad_dirs.left : return 2
-                case robot_pad_dirs.down , 'A' : return 2
-                case robot_pad_dirs.left , robot_pad_dirs.up : return 2
-                case robot_pad_dirs.left , robot_pad_dirs.right : return 2
-                case robot_pad_dirs.left , 'A' : return 3
-                case _ , _ : return 1
-        def step_count(path):
-            count = 0
-            current = 'A'
-            self.print_to_file(f"Path to check {path}")
-            for step in path:
-                self.print_to_file(f"from {current} to {step} there is {get_count(current, step)} steps")
-                count += get_count(current, step)
-                current = step
-            self.print_to_file(f"Final {count}")
-            return count
-
-        def robotpad_shortest_paths(robot_paths):
-            ret = []
-            current = mapping_robotpad['A']
-            min_length = None
-            for path in robot_paths:
-                aux = []
-                current_len = 0
-                for end in path:
-                    _ , paths = robot_pad_grid.shortest_paths(current, end, robot_pad, robot_pad_dirs)
-                    if paths:
-                        keep = filter_chunks(list(map(lambda xs: transform_coord(xs, robot_pad_dirs), paths)))
-                        if not aux:
-                            aux = keep
-                        else:
-                            aux = [xs + ys for xs in aux for ys in keep]
-                        current_len += len(keep[0])
-                    if  min_length is not None and current_len > min_length:
-                        break
-                    current = mapping_robotpad[end]
-                if min_length is None:
-                    min_length = len(aux[0])
-                    ret += aux
-                    continue
-                if current_len < min_length:
-                    min_length = current_len
-                    ret = []
-                ret += aux
-            return filter_chunks(filter_min(ret))
-
-        dir_base_lookup = {
+        dir_oracle = {
             ('A', 'A'): 'A',
             ('^', '^'): 'A',
             ('>', '>'): 'A',
@@ -1881,19 +1728,40 @@ class AdventOfCode:
             ('^', '>'): 'v>A',
         }
 
+        def future_path(path):
+            current = 'A'
+            future_path = []
+            for step in path:
+                future_path += dir_oracle[(current, step)]
+                current = step
+            return future_path , len(future_path)
+
+        def robotpad_shortest_paths(robot_paths):
+            min_length = 0
+            new_paths = []
+            for path in robot_paths:
+                new_path , size = future_path(path)
+                if min_length == 0:
+                    min_length = size
+                    new_paths = [new_path]
+                elif size < min_length:
+                    min_length = size
+                    new_paths = [new_path]
+                elif size == min_length:
+                    new_paths.append(new_path)
+                else:
+                    continue
+            return new_paths
+
         def complexities(limit=2):
             ret = 0
             for code in self.codes:
+                print(f"code {code}")
                 robot_paths = numpad_shortest_paths(code)
-                print(robot_paths)
-                robot_paths = filter_chunks(numpad_shortest_paths(code))
-                print(robot_paths)
-                print(list(map(step_count , robot_paths)))
-                for _ in range(limit):
+                for i in range(limit):
+                    print(f"{i}")
                     print(f"before {len(robot_paths)}")
-                    robot_paths = filter_chunks(robotpad_shortest_paths(robot_paths))
-                    print(list(map(step_count , robot_paths)))
-                    #self.print_rows(robot_paths)
+                    robot_paths = robotpad_shortest_paths(robot_paths)
                     print(f"after {len(robot_paths)}")
                 min_length = len(robot_paths[0])
                 code.pop()
@@ -2210,7 +2078,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
 
-        self.day20()
+        self.day21()
 
 if __name__ == "__main__":
     main = AdventOfCode()
