@@ -1,4 +1,3 @@
-from directions import Directions
 import heapq
 
 class Grid:

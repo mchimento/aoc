@@ -1,4 +1,3 @@
-import argparse
 import re
 from itertools import groupby
 from collections import deque , defaultdict
@@ -9,47 +8,13 @@ import time
 from collections import Counter
 from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 from sympy import solve, Symbol
-import copy
 from sympy.ntheory.modular import solve_congruence
 from functools import cache , reduce
-from itertools import combinations
 import math
+from day import Day
+from day04 import Day04
 
 class AdventOfCode:
-
-    def process_data_as_columns(self, file_path):
-        try:
-            with open(file_path, 'r') as file:
-                # Read lines from the file
-                data = file.read().strip()
-            # Split lines into a list of rows
-            rows = data.splitlines()
-            # Transpose the rows to columns and join each column into a single string
-            columns = [''.join(column) for column in zip(*rows)]
-            return columns
-        except FileNotFoundError:
-            print(f"Error: The file '{file_path}' was not found.")
-            return None
-
-    def process_data_as_rows(self, file_path):
-        try:
-            with open(file_path, 'r') as file:
-                # Read lines from the file
-                data = file.read().strip()
-            return data.splitlines()
-        except FileNotFoundError:
-            print(f"Error: The file '{file_path}' was not found.")
-            return None
-
-    def process_data_as_string(self, file_path, eof_by=""):
-        try:
-            with open(file_path, 'r') as file:
-                # Read lines from the file
-                data = file.read().strip().replace("\n",eof_by)
-            return data
-        except FileNotFoundError:
-            print(f"Error: The file '{file_path}' was not found.")
-            return None
 
     def get_initial_pos(self, elem):
         for x in range(0, len(self.rows)):
@@ -57,9 +22,6 @@ class AdventOfCode:
                 if self.rows[x][y] == elem:
                     return (x, y)
         return None
-
-    def int_list(self, list_string):
-        return [int(x) for x in list_string]
 
     def print_to_file(self, s, file_path="output.txt", type='a'):
         with open(file_path, type) as file:
@@ -98,100 +60,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day1_part1(self):
-        col0 = sorted(self.columns[0])
-        col1 = sorted(self.columns[1])
-        res = sum([abs(y-x) for x, y in zip(col0, col1)])
-        print(res)
-
-    def day1_part2(self):
-        col0 = self.columns[0]
-        col1 = self.columns[1]
-        res = 0
-        for x in col0:
-            hit = 0
-            for y in col1:
-                if x == y:
-                    hit += 1
-            res += x * hit
-        print(res)
-
-    def day2_part1(self):
-       def is_sorted_ascending(xs):
-           return all(xs[i] <= xs[i + 1] for i in range(len(xs) - 1))
-       def is_sorted_descending(xs):
-           return all(xs[i] >= xs[i + 1] for i in range(len(xs) - 1))
-       def is_safe(xs):
-           return all(1 <= abs(xs[i] - xs[i + 1]) <= 3 for i in range(len(xs) - 1))
-       def is_sorted(xs):
-           return is_sorted_ascending(xs) or is_sorted_descending(xs)
-       res = 0
-       for row in self.rows:
-           if is_safe(row) and is_sorted(row):
-               res += 1
-       print(res)
-
-    def day2_part2(self):
-       def is_sorted_ascending(xs):
-           return all(xs[i] <= xs[i + 1] for i in range(len(xs) - 1))
-       def is_sorted_descending(xs):
-           return all(xs[i] >= xs[i + 1] for i in range(len(xs) - 1))
-       def is_safe(xs):
-           return all(1 <= abs(xs[i] - xs[i + 1]) <= 3 for i in range(len(xs) - 1))
-       def is_sorted(xs):
-           return is_sorted_ascending(xs) or is_sorted_descending(xs)
-       def dampener(n, xs):
-            damped = xs[:n] + xs[n+1:]
-            if n + 1 == len(xs):
-               return is_safe(damped) and is_sorted(damped)
-            else:
-               rec = dampener(n + 1, xs)
-               return is_safe(damped) and is_sorted(damped) or rec
-       res = 0
-       for row in self.rows:
-            if is_safe(row) and is_sorted(row):
-               res += 1
-            else:
-                if dampener(0, row):
-                   res += 1
-       print(res)
-
-    def day3_part1(self):
-        pattern = r'mul\((\d{1,3}),(\d{1,3})\)'
-        matches = re.findall(pattern, self.data)
-        results = sum([int(num1) * int(num2) for num1, num2 in matches])
-        print(results)
-
-    def day3_part2(self):
-        do_p = r'do\(\)'
-        dont_p = r'don\'t\(\)'
-        pattern = r'mul\(\d{1,3},\d{1,3}\)|do\(\)|don\'t\(\)'
-        matches = re.findall(pattern, self.data)
-
-        def eval(xs, is_valid):
-            if not xs:
-                return []
-            else:
-                hd = xs.pop(0)
-                if re.match(do_p, hd):
-                    return eval(xs, True)
-                elif re.match(dont_p, hd):
-                    return eval(xs, False)
-                elif is_valid:
-                    return eval(xs, is_valid) + [hd]
-                else:
-                    return eval(xs, is_valid)
-        xs = eval(matches, True)
-
-        def evaluate_multiplications(expr_list):
-            results = []
-            for expr in expr_list:
-                numbers = list(map(int, expr.replace('mul(', '').replace(')', '').split(',')))
-                results.append(numbers[0] * numbers[1])
-
-            return results
-        print(sum(evaluate_multiplications(xs)))
 
     def day4_part1(self):
         def horizontal(rows, pattern):
@@ -2018,22 +1886,15 @@ class AdventOfCode:
         print(f"Part 1: {fitting_pairs()}")
 
     def main(self):
-        """
-        Main function to process command-line arguments and handle the file input.
-        """
-        parser = argparse.ArgumentParser(description="Process a file.")
-        parser.add_argument("file_paths", nargs="+", type=str, help="Path to the input file")
-
-        args = parser.parse_args()
-        file_paths = args.file_paths
-
-        # Process the file and get columns
-        self.rows = self.process_data_as_rows(file_paths[0])
+        #day = Day()
+        #self.rows = day.input.process_data_as_rows(0)
         #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
-
-        self.day21()
+        #day01.day1_part1(self.columns)
+        #self.day21()
+        day = Day04()
+        day.run()
 
 if __name__ == "__main__":
     main = AdventOfCode()
