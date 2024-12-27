@@ -11,7 +11,7 @@ from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 from sympy import solve, Symbol
 import copy
 from sympy.ntheory.modular import solve_congruence
-from functools import cache
+from functools import cache , reduce
 from itertools import combinations
 import math
 
@@ -1728,19 +1728,20 @@ class AdventOfCode:
             ('^', '>'): 'v>A',
         }
 
-        def future_path(path):
+        def shortest_path(path):
             current = 'A'
             future_path = []
             for step in path:
                 future_path += dir_oracle[(current, step)]
                 current = step
-            return future_path , len(future_path)
+            return future_path
 
         def robotpad_shortest_paths(robot_paths):
             min_length = 0
             new_paths = []
             for path in robot_paths:
-                new_path , size = future_path(path)
+                new_path = shortest_path(path)
+                size = len(new_path)
                 if min_length == 0:
                     min_length = size
                     new_paths = [new_path]
@@ -1753,27 +1754,77 @@ class AdventOfCode:
                     continue
             return new_paths
 
+        def shortest_path_bor(key1, key2, pad, gap):
+            r1, c1 = pad[key1]
+            r2, c2 = pad[key2]
+
+            # Vertical and horizontal movements
+            ud = "v" * (r2 - r1) if r2 > r1 else "^" * (r1 - r2)
+            lr = ">" * (c2 - c1) if c2 > c1 else "<" * (c1 - c2)
+
+            # Safe to move vertically first if heading right and corner point isn't the gap
+            if c2 > c1 and f"{r2},{c1}" != f"{gap[0]},{gap[1]}":
+                return f"{ud}{lr}A"
+            # Safe to move horizontally first if corner point isn't the gap
+            if f"{r1},{c2}" != f"{gap[0]},{gap[1]}":
+                return f"{lr}{ud}A"
+            # Must move vertically first because we can't be in the same column as the gap
+            return f"{ud}{lr}A"
+
+        def sequences(seq, pad, gap):
+            keys = []
+            prev_key = "A"
+            for key in seq:
+                keys.append(shortest_path_bor(prev_key, key, pad, gap))
+                prev_key = key
+            return keys
+
+        def add_to_freq_table(f_table, sequence):
+            """Add a sequence to the frequency table."""
+            f_table[sequence] = f_table.get(sequence, 0) + 1
+            return f_table
+
+        def seq_counts(sequence, pad, gap):
+            """Generate a frequency table of subsequences."""
+            subsequences = sequences(sequence, pad, gap)
+            return reduce(add_to_freq_table, subsequences, defaultdict(int))
+
+        def complexity_new(code, num_dir_robots=25):
+            """Calculate the complexity of the given codes."""
+            f_tables = [ {''.join(sequences(code, mapping_numpad, (3,0))) : 1}]
+
+            for _ in range(num_dir_robots):
+                new_f_tables = []
+                for f_table in f_tables:
+                    new_dic = {}
+                    for seq, freq in f_table.items():
+                        for sub_seq, sub_freq in seq_counts(seq, mapping_robotpad, (0, 0)).items():
+                            new_dic[sub_seq] = new_dic.get(sub_seq, 0) + sub_freq * freq
+                    new_f_tables.append(new_dic)
+                f_tables = new_f_tables
+
+            # Calculate the complexity of each code
+            def cmplx(freq_table):
+                return sum(len(seq) * freq for seq, freq in freq_table.items())
+
+            # Sum the complexities, weighted by the code prefix
+            num = int("".join(code[:-1]))
+            return sum(
+                cmplx(f_table) * num
+                for f_table in f_tables
+            )
+
         def complexities(limit=2):
             ret = 0
             for code in self.codes:
-                print(f"code {code}")
-                robot_paths = numpad_shortest_paths(code)
-                for i in range(limit):
-                    print(f"{i}")
-                    print(f"before {len(robot_paths)}")
-                    robot_paths = robotpad_shortest_paths(robot_paths)
-                    print(f"after {len(robot_paths)}")
-                min_length = len(robot_paths[0])
-                code.pop()
-                code_int = int("".join(code))
-                print(f"complexity is {min_length} * {code_int}")
-                ret += min_length * code_int
+                new = complexity_new(code, limit)
+                ret += new
             return ret
 
         parse_input()
         start = time.time()
-        #print(f"Part 1: {complexities(2)}")
-        print(f"Part 2: {complexities(2)}")
+        print(f"Part 1: {complexities(2)}")
+        print(f"Part 2: {complexities(25)}")
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
