@@ -1660,104 +1660,17 @@ class AdventOfCode:
             '1' : (2,0), '2' : (2,1), '3' : (2,2),
             'X' : (3,0), '0' : (3,1), 'A' : (3,2)
         }
-        num_pad_grid = Grid(num_pad)
         num_pad_dirs = Directions(num_pad, wall='X')
-
         robot_pad = [['X', num_pad_dirs.up, 'A'], [num_pad_dirs.left, num_pad_dirs.down, num_pad_dirs.right]]
-        robot_pad_grid = Grid(robot_pad)
         robot_pad_dirs = Directions(robot_pad, wall='X')
         mapping_robotpad = {
             'X' : (0,0), robot_pad_dirs.up : (0,1), 'A' : (0,2),
             robot_pad_dirs.left : (1,0), robot_pad_dirs.down : (1,1), robot_pad_dirs.right : (1,2)
         }
 
-        def transform_coord(path, dirs):
-            keep = []
-            for i in range(len(path)-1):
-                if path[i][0] == path[i+1][0] + 1:
-                    keep.append(dirs.up)
-                elif path[i][0] == path[i+1][0] - 1:
-                    keep.append(dirs.down)
-                elif path[i][1] == path[i+1][1] - 1:
-                    keep.append(dirs.right)
-                else:
-                    keep.append(dirs.left)
-            keep.append('A')
-            return keep
-
-        def numpad_shortest_paths(code):
-            ret = []
-            current = mapping_numpad['A']
-            for end in code:
-                _ , paths = num_pad_grid.shortest_paths(current, end, num_pad, num_pad_dirs)
-                keep = list(map(lambda xs: transform_coord(xs, num_pad_dirs), paths))
-                if not ret:
-                    ret = keep
-                else:
-                    ret = [xs + ys for xs in ret for ys in keep]
-                current = mapping_numpad[end]
-            return ret
-
-        dir_oracle = {
-            ('A', 'A'): 'A',
-            ('^', '^'): 'A',
-            ('>', '>'): 'A',
-            ('v', 'v'): 'A',
-            ('<', '<'): 'A',
-            ('A', '^'): '<A',
-            ('^', 'A'): '>A',
-            ('A', '>'): 'vA',
-            ('>', 'A'): '^A',
-            ('v', '^'): '^A',
-            ('^', 'v'): 'vA',
-            ('v', '<'): '<A',
-            ('<', 'v'): '>A',
-            ('v', '>'): '>A',
-            ('>', 'v'): '<A',
-
-            ('A', 'v'): '<vA',
-            ('v', 'A'): '^>A',
-            ('A', '<'): 'v<<A',
-            ('<', 'A'): '>>^A',
-
-            ('>', '<'): '<<A',
-            ('<', '>'): '>>A',
-            ('<', '^'): '>^A',
-            ('^', '<'): 'v<A',
-            ('>', '^'): '<^A',
-            ('^', '>'): 'v>A',
-        }
-
-        def shortest_path(path):
-            current = 'A'
-            future_path = []
-            for step in path:
-                future_path += dir_oracle[(current, step)]
-                current = step
-            return future_path
-
-        def robotpad_shortest_paths(robot_paths):
-            min_length = 0
-            new_paths = []
-            for path in robot_paths:
-                new_path = shortest_path(path)
-                size = len(new_path)
-                if min_length == 0:
-                    min_length = size
-                    new_paths = [new_path]
-                elif size < min_length:
-                    min_length = size
-                    new_paths = [new_path]
-                elif size == min_length:
-                    new_paths.append(new_path)
-                else:
-                    continue
-            return new_paths
-
-        def shortest_path_bor(key1, key2, pad, gap):
+        def shortest_path(key1, key2, pad, gap):
             r1, c1 = pad[key1]
             r2, c2 = pad[key2]
-
             # Vertical and horizontal movements
             ud = "v" * (r2 - r1) if r2 > r1 else "^" * (r1 - r2)
             lr = ">" * (c2 - c1) if c2 > c1 else "<" * (c1 - c2)
@@ -1775,22 +1688,19 @@ class AdventOfCode:
             keys = []
             prev_key = "A"
             for key in seq:
-                keys.append(shortest_path_bor(prev_key, key, pad, gap))
+                keys.append(shortest_path(prev_key, key, pad, gap))
                 prev_key = key
             return keys
 
         def add_to_freq_table(f_table, sequence):
-            """Add a sequence to the frequency table."""
             f_table[sequence] = f_table.get(sequence, 0) + 1
             return f_table
 
         def seq_counts(sequence, pad, gap):
-            """Generate a frequency table of subsequences."""
             subsequences = sequences(sequence, pad, gap)
             return reduce(add_to_freq_table, subsequences, defaultdict(int))
 
-        def complexity_new(code, num_dir_robots=25):
-            """Calculate the complexity of the given codes."""
+        def complexity_code(code, num_dir_robots=25):
             f_tables = [ {''.join(sequences(code, mapping_numpad, (3,0))) : 1}]
 
             for _ in range(num_dir_robots):
@@ -1803,22 +1713,16 @@ class AdventOfCode:
                     new_f_tables.append(new_dic)
                 f_tables = new_f_tables
 
-            # Calculate the complexity of each code
             def cmplx(freq_table):
                 return sum(len(seq) * freq for seq, freq in freq_table.items())
 
-            # Sum the complexities, weighted by the code prefix
             num = int("".join(code[:-1]))
-            return sum(
-                cmplx(f_table) * num
-                for f_table in f_tables
-            )
+            return sum(cmplx(f_table) * num for f_table in f_tables)
 
-        def complexities(limit=2):
+        def complexities(limit=25):
             ret = 0
             for code in self.codes:
-                new = complexity_new(code, limit)
-                ret += new
+                ret += complexity_code(code, limit)
             return ret
 
         parse_input()
