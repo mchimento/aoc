@@ -11,8 +11,7 @@ from sympy import solve, Symbol
 from sympy.ntheory.modular import solve_congruence
 from functools import cache , reduce
 import math
-from day import Day
-from day04 import Day04
+from day05 import Day05
 
 class AdventOfCode:
 
@@ -60,100 +59,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day5_part1(self):
-        def val_is_sorted_forward(x, xs, ind):
-            for i , val in enumerate(xs):
-                if i <= ind:
-                    continue
-                if val == x:
-                    continue
-                if not x in self.check_rules:
-                    return True
-                ordering = self.check_rules[x]
-                if val in ordering:
-                    continue
-                else:
-                    return False
-            return True
-        def val_is_sorted_backwards(x, xs, ind):
-            aux = [ val for val in xs[:ind] if x in self.check_rules and val in self.check_rules[x]]
-            return not aux
-
-        def val_is_sorted(x, xs, i):
-            return val_is_sorted_forward(x, xs, i) and val_is_sorted_backwards(x, xs, i)
-
-        def update_is_sorted(xs):
-            res = True
-            for i , x in enumerate(xs):
-                res = res and val_is_sorted(x, xs, i)
-            return res
-
-        def get_middle_value(xs):
-            if not xs:
-                return None
-            if len(xs) % 2 == 1:
-                return xs[len(xs) // 2]
-            else:
-                return xs[len(xs) // 2 - 1: len(xs) // 2 + 1]
-
-        res = []
-        for update in self.updates:
-            if update_is_sorted(update):
-                res.append(get_middle_value(update))
-        res = self.int_list(res)
-        print(sum(res))
-
-    def day5_part2(self):
-        def val_is_sorted_forward(x, xs, ind):
-            for i , val in enumerate(xs):
-                if i <= ind:
-                    continue
-                if val == x:
-                    continue
-                if not x in self.check_rules:
-                    return True
-                ordering = self.check_rules[x]
-                if val in ordering:
-                    continue
-                else:
-                    return False
-            return True
-        def val_is_sorted_backwards(x, xs, ind):
-            aux = [ val for val in xs[:ind] if x in self.check_rules and val in self.check_rules[x]]
-            return not aux
-
-        def val_is_sorted(x, xs, i):
-            return val_is_sorted_forward(x, xs, i) and val_is_sorted_backwards(x, xs, i)
-
-        def update_is_sorted(xs):
-            res = True
-            for i , x in enumerate(xs):
-                res = res and val_is_sorted(x, xs, i)
-            return res
-
-        def get_middle_value(xs):
-            if not xs:
-                return None
-            if len(xs) % 2 == 1:
-                return xs[len(xs) // 2]
-            else:
-                return xs[len(xs) // 2 - 1: len(xs) // 2 + 1]
-
-        def sort_update(xs):
-            res = []
-            for _ , x in enumerate(xs):
-                hits = [ y for y in xs if x in self.check_rules and y in self.check_rules[x] ]
-                res.append((x, len(hits)))
-            res = sorted(res, key=lambda x: x[1], reverse=True)
-            return [x[0] for x in res]
-
-        res = []
-        for update in self.updates:
-            if not update_is_sorted(update):
-                res.append(get_middle_value(sort_update(update)))
-        res = self.int_list(res)
-        print(sum(res))
 
     def day6(self):
         def parse_input():
@@ -1807,7 +1712,7 @@ class AdventOfCode:
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
         #self.day21()
-        day = Day04()
+        day = Day05()
         day.run()
 
 if __name__ == "__main__":
