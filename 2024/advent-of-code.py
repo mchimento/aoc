@@ -107,12 +107,9 @@ class AdventOfCode:
         self.context = {}
         self.var_vals = {}
         parse_input()
-        start = time.time()
         part1()
         print(f"Part 1: {to_int(self.out)}")
         print(part2())
-        end = time.time()
-        print(f"Execution time: {end - start} seconds")
 
     def day25(self):
         self.keys = []
