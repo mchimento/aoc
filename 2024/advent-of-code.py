@@ -4,108 +4,14 @@ from directions import Directions
 from grid import Grid
 import time
 from functools import reduce
-from day18 import Day18
+from day20 import Day20
 from day import Day
 
 class AdventOfCode:
 
-    def get_initial_pos(self, elem):
-        for x in range(0, len(self.rows)):
-            for y in range(0, len(self.rows[0])):
-                if self.rows[x][y] == elem:
-                    return (x, y)
-        return None
-
-    def print_to_file(self, s, file_path="output.txt", type='a'):
-        with open(file_path, type) as file:
-            print(s, file=file)
-
     def split_str_by_fun(self, grid, fun):
         grid = [ fun(row) for row in grid ]
         return grid
-
-    def is_valid(self, x , y):
-        return 0 <= x < len(self.rows) \
-               and 0 <= y < len(self.rows[0])
-
-    def swap(self, x, y, xs):
-        xs[x], xs[y] = xs[y], xs[x]
-
-    def swap_grid(self, x, y, xi, yi, grid):
-        grid[x][y], grid[xi][yi] = grid[xi][yi], grid[x][y]
-
-    def default(self, val, default):
-        if val is None:
-            return default
-        else:
-            return val
-
-    def print_rows(self, rows):
-        for row in rows:
-            print(row)
-
-    def pretty_print_rows(self, rows):
-        for row in rows:
-            print(''.join(row))
-
-    def make_grid_str(self, grid):
-        aux = ""
-        for row in grid:
-            aux += ''.join(row) + "\n"
-        return aux
-
-    def day19(self):
-        self.patterns = self.rows
-        def parse_input():
-            self.patterns = list(map(lambda x : x.strip(), self.patterns[0].split(",")))
-        def get_valid_patterns(design):
-            found = []
-            for pattern in self.patterns:
-                founded = re.search(pattern, design)
-                if founded is not None:
-                    found.append(pattern)
-            return found
-        def check_towels(design, patterns):
-            size = len(design)
-            dp = [False for x in range(size+1)]
-            dp[0] = True
-
-            for i in range(1, size + 1):
-                for pattern in patterns:
-                    if dp[i - len(pattern)] and design[i - len(pattern):i] == pattern:
-                        dp[i] = True
-                        break
-            return dp[size]
-
-        def count_design(design, patterns):
-            size = len(design)
-            dp = [0 for x in range(size+1)]
-            dp[0] = 1
-
-            for i in range(1, size + 1):
-                for pattern in patterns:
-                    if i >= len(pattern) and design[i - len(pattern):i] == pattern:
-                        dp[i] += dp[i - len(pattern)]
-            return dp[size]
-
-        def count_combinations():
-            ret = 0
-            for design in self.designs:
-                patterns = get_valid_patterns(design)
-                ret += count_design(design, patterns)
-            return ret
-
-        def fitting_designs():
-            ret = 0
-            for design in self.designs:
-                patterns = get_valid_patterns(design)
-                if check_towels(design, patterns):
-                    ret += 1
-            return ret
-
-        parse_input()
-        print(f"Part 1: {fitting_designs()}")
-        print(f"Part 2: {count_combinations()}")
 
     def day20(self):
         dirs = Directions(self.rows, wall="#")
@@ -583,10 +489,10 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
-        day18 = Day18()
-        day18.run()
+        day = Day20()
+        day.run()
         #day.run_connected()
-        self.day18()
+        #self.day18()
 
 if __name__ == "__main__":
     main = AdventOfCode()
