@@ -10,7 +10,8 @@ from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 from sympy import solve, Symbol
 from sympy.ntheory.modular import solve_congruence
 from functools import reduce
-from day09 import Day09
+from day11 import Day11
+from day import Day
 
 class AdventOfCode:
 
@@ -58,65 +59,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day10(self):
-        def parse_input():
-            for x in range(0, len(self.rows)):
-                for y in range(0, len(self.rows[0])):
-                    self.rows[x][y] = int(self.rows[x][y])
-        def get_trailheads():
-            res = []
-            for x in range(0, len(self.rows)):
-                for y in range(0, len(self.rows[0])):
-                    if self.rows[x][y] == 0:
-                        res.append((x, y))
-            return res
-        def reachable_coords(x, y, val):
-            reachables = []
-            if 0 <= x - 1  < len(self.rows):
-                if self.rows[x-1][y] == val:
-                    reachables.append((x-1, y))
-            if 0 <= x + 1  < len(self.rows):
-                if self.rows[x+1][y] == val:
-                    reachables.append((x+1, y))
-            if 0 <= y - 1  < len(self.rows[0]):
-                if self.rows[x][y-1] == val:
-                    reachables.append((x, y-1))
-            if 0 <= y + 1  < len(self.rows[0]):
-                if self.rows[x][y+1] == val:
-                    reachables.append((x, y+1))
-            return reachables
-        def check_trailhead(trailhead):
-            paths = [[(trailhead[0], trailhead[1])]]
-            for val in range(1, 10):
-                new_paths = []
-                for path in paths:
-                    x , y = path[len(path)-1]
-                    next_positions = reachable_coords(x, y, val)
-                    if not next_positions:
-                        continue
-                    for pos in next_positions:
-                        new_path = path.copy()
-                        new_path.append(pos)
-                        new_paths.append(new_path)
-                paths = new_paths
-            return paths
-        def trials_score(trials):
-            reached = set()
-            for trial in trials:
-                reached.add(trial[len(trial)-1])
-            return len(reached)
-
-        parse_input()
-        trailheads = get_trailheads()
-        res = 0
-        for trailhead in trailheads:
-            res += trials_score(check_trailhead(trailhead))
-        print(f"Part 1: {res}")
-        res = 0
-        for trailhead in trailheads:
-            res += len(check_trailhead(trailhead))
-        print(f"Part 2: {res}")
 
     def day11(self):
         def parse_input():
@@ -1479,7 +1421,10 @@ class AdventOfCode:
             return count
 
         parse_input()
+        start = time.time()
         print(f"Part 1: {fitting_pairs()}")
+        end = time.time()
+        print(f"Execution time: {end - start} seconds")
 
     def main(self):
         #day = Day()
@@ -1489,7 +1434,7 @@ class AdventOfCode:
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
         #self.day21()
-        day = Day09()
+        day = Day11()
         day.run()
 
 if __name__ == "__main__":

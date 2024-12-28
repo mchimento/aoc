@@ -6,8 +6,7 @@ class Day09(Day):
         super().__init__()
 
     def parse_input(self):
-        self.rows = self.input.rows_listed(self.input.process_data_as_rows(0))
-        self.rows = self.input.int_list(self.rows[0])
+        self.rows = self.input.int_grid(self.input.process_data_as_rows(0))[0]
         self.map = {}
         self.highest_id = 0
 

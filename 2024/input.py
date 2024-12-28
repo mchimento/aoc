@@ -49,3 +49,10 @@ class Input:
 
     def rows_listed(self, rows):
         return [ list(row) for row in rows ]
+
+    def int_grid(self, grid):
+        rows = []
+        for row in self.rows_listed(grid):
+            rows.append(self.int_list(row))
+        return rows
+
