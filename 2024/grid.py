@@ -6,15 +6,22 @@ class Grid:
         self.grid = grid
         self.dirs= dir
 
-    def get_elem_pos(self, elem):
-        for x in range(0, len(self.grid)):
-            for y in range(0, len(self.grid[0])):
-                if self.grid[x][y] == elem:
+    def get_elem_pos(self, elem, grid_arg=None):
+        grid = grid_arg if grid_arg is not None else self.grid
+        for x in range(0, len(grid)):
+            for y in range(0, len(grid[0])):
+                if grid[x][y] == elem:
                     return (x, y)
         return None
 
     def create_empty(self, height, width):
         self.grid = [["."] * width for _ in range(height)]
+
+    def swap(self, x, y, xi, yi, grid=None):
+        if grid is not None:
+            grid[x][y], grid[xi][yi] = grid[xi][yi], grid[x][y]
+        else:
+            self.grid[x][y], self.grid[xi][yi] = self.grid[xi][yi], self.grid[x][y]
 
     def fill_grid(self, positions, elem):
         if positions is None:
