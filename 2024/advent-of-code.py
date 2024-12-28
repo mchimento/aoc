@@ -1,12 +1,11 @@
 import re
-from itertools import groupby
 from collections import deque , defaultdict
 import heapq
 from directions import Directions
 from grid import Grid
 import time
 from functools import reduce
-from day16 import Day16
+from day17 import Day17
 from day import Day
 
 class AdventOfCode:
@@ -55,70 +54,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day16(self):
-        dirs = Directions(self.rows, wall="#")
-        start = self.get_initial_pos('S')
-        end = 'E'
-        def parse_input():
-            self.rows = [ list(row) for row in self.rows ]
-
-        def shortest_paths():
-            pq = []
-            parent = {}
-            heapq.heappush(pq, (0, start[0], start[1], dirs.right))  # (cost, x, y, dir)
-            visited = set()
-
-            while pq:
-                cost, x, y, dir = heapq.heappop(pq)
-                if self.rows[x][y] == end:
-                    all_paths = []
-                    reconstruct_paths(x, y, dir, parent, all_paths, [(start[0], start[1])])
-                    all_paths.reverse()
-                    return cost, all_paths
-
-                if (x, y, dir) in visited:
-                    continue
-                visited.add((x, y, dir))
-
-                nx , ny, ndir = dirs.move_from(x , y, dir)
-                if dir == ndir:
-                    if (nx, ny, dir) not in visited:
-                        heapq.heappush(pq, (cost + 1, nx, ny, dir))
-                        if (nx, ny, dir) not in parent:
-                            parent[(nx, ny, dir)] = []
-                        parent[(nx, ny, dir)].append((x, y, dir))
-                for turn, new_dir in [(1000, dirs.rotate90_clockwise(dir)), (1000, dirs.rotate90_anticlockwise(dir))]:
-                    if (x, y, new_dir) not in visited:
-                        heapq.heappush(pq, (cost + turn, x, y, new_dir))
-                        if (x, y, new_dir) not in parent:
-                            parent[(x, y, new_dir)] = []
-                        parent[(x, y, new_dir)].append((x, y, dir))
-
-            return None, []
-
-        def reconstruct_paths(x, y, dir, parent, all_paths, current_path):
-            if (x, y, dir) == (start[0], start[1], dirs.right):
-                all_paths.append(list(current_path))
-                return
-            if (x, y, dir) in parent:
-                for px, py, pdir in parent[(x, y, dir)]:
-                    current_path.append((px, py))
-                    reconstruct_paths(px, py, pdir, parent, all_paths, current_path)
-                    current_path.pop()
-
-        def count_tiles(paths):
-            tiles = set()
-            for path in paths:
-                for node in path:
-                    tiles.add(node)
-                    self.rows[node[0]][node[1]] = 'O'
-            return len(tiles)+1
-
-        parse_input()
-        points , paths = shortest_paths()
-        print(f"Part 1: {points}")
-        print(f"Part 2: {count_tiles(paths)}")
 
     def day17(self):
         def parse_input():
@@ -821,15 +756,16 @@ class AdventOfCode:
         print(f"Execution time: {end - start} seconds")
 
     def main(self):
-        #day = Day()
+        day = Day()
         #self.rows = day.input.process_data_as_rows(0)
         #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
-        #self.day15()
-        day = Day15()
+        day = Day17()
         day.run()
+        #day.run_connected()
+        #self.day16()
 
 if __name__ == "__main__":
     main = AdventOfCode()

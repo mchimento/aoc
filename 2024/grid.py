@@ -4,7 +4,7 @@ class Grid:
 
     def __init__(self, grid = None, dirs=None):
         self.grid = grid
-        self.dirs= dir
+        self.dirs= dirs
 
     def get_elem_pos(self, elem, grid_arg=None):
         grid = grid_arg if grid_arg is not None else self.grid
@@ -69,7 +69,7 @@ class Grid:
         """
         return sum(abs(a - b) for a, b in zip(point1, point2))
 
-    def shortest_paths_rot(self, start, end, start_dir, grid, dirs):
+    def shortest_paths_rot(self, start, end, start_dir, grid_arg=None, dirs_arg=None):
         """
         Shortest path algorithm including directations and rotations
         """
@@ -77,6 +77,13 @@ class Grid:
         parent = {}
         heapq.heappush(pq, (0, start[0], start[1], start_dir))  # (cost, x, y, dir)
         visited = set()
+
+        if grid_arg is not None:
+            grid = grid_arg
+            dirs = dirs_arg
+        else:
+            grid = self.grid
+            dirs = self.dirs
 
         while pq:
             cost, x, y, dir = heapq.heappop(pq)
