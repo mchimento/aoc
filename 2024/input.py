@@ -3,8 +3,7 @@ import argparse
 class Input:
 
     def __init__(self):
-        self.file_paths = None
-        self.read_files()
+        self.file_paths = self.read_files()
 
     def read_files(self):
         """
@@ -14,8 +13,7 @@ class Input:
         parser.add_argument("file_paths", nargs="+", type=str, help="Path to the input file")
 
         args = parser.parse_args()
-        self.file_paths = args.file_paths
-        return self.file_paths
+        return args.file_paths
 
     def process_data_as_columns(self, file_ix):
         try:
@@ -48,3 +46,6 @@ class Input:
 
     def int_list(self, list_string):
         return [ int(x) for x in list_string ]
+
+    def rows_listed(self, rows):
+        return [ list(row) for row in rows ]

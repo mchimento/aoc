@@ -11,7 +11,7 @@ from sympy import solve, Symbol
 from sympy.ntheory.modular import solve_congruence
 from functools import cache , reduce
 import math
-from day05 import Day05
+from day07 import Day07
 
 class AdventOfCode:
 
@@ -59,86 +59,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day6(self):
-        def parse_input():
-            self.rows = [ list(row) for row in self.rows ]
-        dirs = Directions(self.rows, '#')
-
-        def is_inbounds(x, y):
-            return 0 <= x < len(self.rows) and 0 <= y < len(self.rows[0])
-
-        def find_path(start, dir, obs=None):
-            x, y = start
-            visited = set()
-            pos_vectors = set()
-            pos_vectors.add((x, y, dir))
-
-            while is_inbounds(x, y):
-                visited.add((x, y))
-                dx, dy = dirs.coord(dir)
-                nx, ny = x + dx, y + dy
-
-                if is_inbounds(nx, ny) and (self.rows[nx][ny] == dirs.wall or (obs and (nx, ny) == obs)):
-                    dir = dirs.rotate90_clockwise(dir)
-                else:
-                    x, y = nx, ny
-
-                pos_vector = (x, y, dir)
-                if pos_vector in pos_vectors:
-                    return True, visited
-                pos_vectors.add(pos_vector)
-
-            return False, visited
-
-        parse_input()
-        start = self.get_initial_pos(dirs.up)
-
-        _, visited = find_path(start, dirs.up)
-        print(f"Part 1: {len(visited)}")
-
-        result = 0
-        obstacles = visited - {start}
-        for obs in obstacles:
-            if find_path(start, dirs.up, obs)[0]:
-                result += 1
-        print(f"Part 2: {result}")
-
-    def day7(self):
-        def parse_input():
-            rows = []
-            for row in self.rows:
-                parts = row.split(':')
-                test = int(parts[0].strip())
-                values = [int(num) for num in parts[1].strip().split()]
-                result = (test, values)
-                rows.append(result)
-            self.rows = rows
-            self.print_rows(self.rows)
-        def add(x, y):
-            return x+y
-        def mult(x, y):
-            return x*y
-        def app(x, y):
-            return int(str(x)+str(y))
-        operations = [add, mult, app]
-        def eval_all_exps(values):
-            if len(values) == 1:
-                return values
-            val = values.pop()
-            rec = eval_all_exps(values)
-            exps = []
-            for op in operations:
-                for exp in rec:
-                    exps.append(op(exp, val))
-            return exps
-
-        parse_input()
-        res = 0
-        for row in self.rows:
-            if row[0] in eval_all_exps(row[1]):
-                res += row[0]
-        print(res)
 
     def day8(self):
         self.nodes = defaultdict(list)
@@ -1712,7 +1632,7 @@ class AdventOfCode:
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
         #self.day21()
-        day = Day05()
+        day = Day07()
         day.run()
 
 if __name__ == "__main__":

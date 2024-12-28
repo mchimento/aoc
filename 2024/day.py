@@ -15,8 +15,18 @@ class Day:
             res2 = self.part2()
             print(f"Part 2: {res2}")
 
+    def run_connected(self, only1=False):
+        res1 , args_part2 = self.part1()
+        print(f"Part 1: {res1}")
+        res2 = self.part2(args_part2)
+        print(f"Part 2: {res2}")
+
     def part1(self):
         return 0
 
-    def part2(self):
+    def part2(self, args=None):
         return 0
+
+    def print_to_file(self, s, file_path="output.txt", type='a'):
+        with open(file_path, type) as file:
+            print(s, file=file)
