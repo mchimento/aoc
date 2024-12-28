@@ -1,11 +1,10 @@
 import re
 from collections import deque , defaultdict
-import heapq
 from directions import Directions
 from grid import Grid
 import time
 from functools import reduce
-from day17 import Day17
+from day18 import Day18
 from day import Day
 
 class AdventOfCode:
@@ -54,184 +53,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day17(self):
-        def parse_input():
-            parsed = {}
-            for row in self.rows:
-                parse = row.replace('Register', '').strip().split(':')
-                key , val = parse[0] , parse[1]
-                parsed[key] = int(val)
-            self.rows = parsed
-            self.program = self.int_list(self.program[0].replace('Program:', '').strip().split(','))
-        def literal_val(literal):
-            return literal
-        def combo_val(combo):
-            if 0 <= combo <= 3:
-                return combo
-            elif combo == 4:
-                return self.rows['A']
-            elif combo == 5:
-                return self.rows['B']
-            elif combo == 6:
-                return self.rows['C']
-            else:
-                return None
-        def eval(opcode, operand):
-            match opcode:
-                case 0:
-                    numerator = self.rows['A']
-                    denominator = 2 ** combo_val(operand)
-                    self.rows['A'] = numerator // denominator
-                    self.pointer += 2
-                case 1:
-                    self.rows['B'] = self.rows['B'] ^ literal_val(operand)
-                    self.pointer += 2
-                case 2:
-                    self.rows['B'] = combo_val(operand) % 8
-                    self.pointer += 2
-                case 3:
-                    if self.rows['A'] == 0:
-                        self.pointer += 2
-                    else:
-                        self.pointer = literal_val(operand)
-                case 4:
-                    self.rows['B'] = self.rows['B'] ^ self.rows['C']
-                    self.pointer += 2
-                case 5:
-                    val = combo_val(operand) % 8
-                    self.pointer += 2
-                    return str(val)
-                case 6:
-                    numerator = self.rows['A']
-                    denominator = 2 ** combo_val(operand)
-                    self.rows['B'] = numerator // denominator
-                    self.pointer += 2
-                case 7:
-                    numerator = self.rows['A']
-                    denominator = 2 ** combo_val(operand)
-                    self.rows['C'] = numerator // denominator
-                    self.pointer += 2
-            return ""
-
-        def eval_program():
-            if self.pointer == len(self.program)-1:
-                print("halt")
-            ret = eval(self.program[self.pointer], self.program[self.pointer+1])
-            if self.pointer == len(self.program):
-                return ret
-            else:
-                return ret + eval_program()
-
-        def reset_memory():
-            self.rows['A'] = 0
-            self.rows['B'] = 0
-            self.rows['C'] = 0
-            self.pointer = 0
-
-        def eval_for(val):
-            reset_memory()
-            self.rows['A'] = val
-            return self.int_list(eval_program())
-
-        def get_min_A(A=0, ix=0):
-            """
-            while a != 0 {
-                b = a % 8
-                b = b ^ 2
-                c = a // (2 ** b)
-                b = b ^ 7
-                b = b ^ c
-                a = a // 8
-                out(b % 8)
-            }
-
-            Program: 0,3,5,4,3,0
-            while a != 0 {
-                a = a // 8
-                out(a % 8)
-            }
-            """
-            # bitwise comparison based on the fact that in the input we have a // 8, and the program manipulates its (last) bits
-            if ix == len(self.program):
-                return A
-            for i in range(8):
-                ret = eval_for(A * 8 + i)
-                if ret[0] == self.program[len(self.program) - 1 - ix]:
-                    ret_val = get_min_A((A * 8 + i), ix + 1)
-                    if ret_val:
-                        return ret_val
-
-        parse_input()
-        self.pointer = 0
-        print(f"Part 1: {",".join(list(eval_program()))}")
-        print(f"Part 2: {get_min_A()}")
-
-    def day18(self):
-        self.grid = []
-        dirs = Directions(self.grid, wall="#")
-        def parse_input():
-            parsed = []
-            for row in self.rows:
-                parse = self.int_list(row.split(','))
-                parsed.append(parse)
-            self.rows = parsed
-        def create_grid(size):
-            if self.grid:
-                self.grid = []
-            for _ in range(size):
-                self.grid.append([ dirs.empty for i in range(size)])
-
-        def shortest_path():
-            rows, cols = len(self.grid), len(self.grid[0])
-            visited = set()
-            parent = {}
-            queue = deque([(0, 0, 0, dirs.right)])  # (x, y, distance, dir)
-
-            while queue:
-                x, y, dist , dir = queue.popleft()
-                if (x, y) == (cols - 1, rows - 1):
-                    path = []
-                    current = (x, y, dir)
-                    while current is not None:
-                        path.append(current)
-                        current = parent.get(current)
-                    return dist, path[::-1]
-                visited.add((x, y, dir))
-                for d in dirs.directions:
-                    nx, ny , ndir = dirs.move_from(x, y, d)
-                    if (nx, ny, ndir) not in visited and self.grid[nx][ny] != dirs.wall:
-                        queue.append((nx, ny, dist + 1, ndir))
-                        visited.add((nx, ny, ndir))
-                        if (nx, ny) not in parent:
-                            parent[(nx, ny, ndir)] = (x, y, dir)
-            return None , None
-
-        def drop_byte(x , y):
-            self.grid[y][x] = dirs.wall
-        def drop_bytes(limit=None):
-            i = 0
-            for x , y in self.rows:
-                if limit is not None and i==limit:
-                    break
-                i+=1
-                drop_byte(x, y)
-
-        def first_block():
-            _ , path = shortest_path()
-            while path is not None and self.rows:
-                x , y = self.rows.pop(0)
-                drop_byte(x,y)
-                _ , path = shortest_path()
-            return x , y
-
-        parse_input()
-        create_grid(71)
-        drop_bytes(1024)
-        dist , _ = shortest_path()
-        print(f"Part 1: {dist}")
-        create_grid(71)
-        print(f"Part 2: {first_block()}")
 
     def day19(self):
         self.patterns = self.rows
@@ -756,16 +577,16 @@ class AdventOfCode:
         print(f"Execution time: {end - start} seconds")
 
     def main(self):
-        day = Day()
-        #self.rows = day.input.process_data_as_rows(0)
+        #self.day = Day()
+        #self.rows = self.day.input.process_data_as_rows(0)
         #self.rows = self.process_data_as_string(file_paths[0], "\n")
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
-        day = Day17()
-        day.run()
+        day18 = Day18()
+        day18.run()
         #day.run_connected()
-        #self.day16()
+        self.day18()
 
 if __name__ == "__main__":
     main = AdventOfCode()
