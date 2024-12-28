@@ -1,145 +1,10 @@
 import re
 from collections import defaultdict
 import time
-from day22 import Day22
+from day24 import Day24
 from day import Day
 
 class AdventOfCode:
-
-    def day22(self):
-        self.secrets = {}
-        self.prices = {}
-        self.max_price = {}
-        self.variations = {}
-        self.sum_secrets = 0
-        self.seqs = {}
-        self.max_seq = None
-        def parse_input():
-            id = 0
-            for row in self.rows:
-                self.secrets[id] = [int(row)]
-                id += 1
-        def new_secret(secret):
-            step1 = ((secret * 64) ^ secret) % 16777216
-            step2 = ((step1 // 32) ^ step1) % 16777216
-            step3 = ((step2 * 2048) ^ step2) % 16777216
-            return step3
-        def get_buyers_secrets(amount):
-            last_secret = None
-            for i in range(amount):
-                print(f"run {i}")
-                for id , secrets in self.secrets.items():
-                    last_secret = new_secret(secrets[-1])
-                    price = last_secret % 10
-                    if i == 0:
-                        self.secrets[id] = [last_secret]
-                        self.prices[id] = [price]
-                        self.max_price[id] = price
-                    else:
-                        self.secrets[id].append(last_secret)
-                        self.prices[id].append(price)
-                        self.max_price[id] = price if self.max_price[id] < price else self.max_price[id]
-                    if i == amount -1:
-                        vars_and_max(self.prices[id], id)
-                        self.sum_secrets += last_secret
-        def vars_and_max(prices, id):
-            vars = []
-            prev = 0
-            visited = set()
-            for i , price in enumerate(prices):
-                if i == 0:
-                    vars.append(0)
-                    prev = price
-                    continue
-                vars.append(price - prev)
-                prev = price
-                if i >= 4:
-                    seq = tuple(vars[i-3:i+1])
-                    if seq in visited:
-                        continue
-                    else:
-                        visited.add(seq)
-                    if seq in self.seqs:
-                        self.seqs[seq]['price'] += price
-                        self.seqs[seq]['touches_max'] = self.seqs[seq]['touches_max'] or (price == self.max_price[id])
-                    else:
-                        self.seqs[seq] = {}
-                        self.seqs[seq]['price'] = price
-                        self.seqs[seq]['touches_max'] = price == self.max_price[id]
-                    new_price = self.seqs[seq]['price']
-                    is_max = self.seqs[seq]['touches_max']
-                    if self.max_seq is None and is_max:
-                        self.max_seq = seq , price
-                    elif self.max_seq is None:
-                        continue
-                    else:
-                        _ , maxp_m = self.max_seq
-                        if maxp_m < new_price and is_max:
-                            self.max_seq = seq , new_price
-            return vars
-        def check_seq_bananas(seq):
-            price = 0
-            for id , variation in self.variations.items():
-                vars = variation['vars']
-                ix = find_sublist_indices(vars, seq)
-                if ix is None:
-                    continue
-                else:
-                    price += self.prices[id][ix+3]
-            return price
-        def find_sublist_indices(main_list, sub_list):
-            for i in range(len(main_list) - 3):
-                xs = main_list[i:i + 4]
-                if xs == sub_list:
-                    return i
-            return None
-
-        parse_input()
-        get_buyers_secrets(2000)
-        print(f"Part 1: {self.sum_secrets}")
-        print(f"Part 2: {self.max_seq[1]}")
-
-    def day23(self):
-        self.graph = defaultdict(set)
-        def parse_input():
-            for row in self.rows:
-                c1 , c2 = re.split("-", row)
-                self.graph[c1].add(c2)
-                self.graph[c2].add(c1)
-        def find_computer_sets_of_3():
-            networks = set()
-            for pc in self.graph:
-                for neighbor in self.graph[pc]:
-                    common_neighbors = self.graph[pc] & self.graph[neighbor]
-                    for common in common_neighbors:
-                        if pc.startswith('t') or neighbor.startswith('t') or common.startswith('t'):
-                            triangle = tuple(sorted([pc, neighbor, common]))
-                            networks.add(triangle)
-            return networks
-
-        def bron_kerbosch(R, P, X, graph, cliques):
-            if not P and not X:
-                cliques.append(R)
-                return
-            for node in list(P):
-                bron_kerbosch(R | {node}, P & graph[node], X & graph[node], graph, cliques)
-                P.remove(node)
-                X.add(node)
-
-        # Find all maximal cliques
-        def find_maximal_cliques(graph):
-            cliques = []
-            nodes = set(graph.keys())
-            bron_kerbosch(set(), nodes, set(), graph, cliques)
-            return cliques
-
-        parse_input()
-        sets = find_computer_sets_of_3()
-        print(f"Part 1: {len(sets)}")
-        cliques = find_maximal_cliques(self.graph)
-        max_size = max(len(clique) for clique in cliques)
-        largest_cliques = sorted([clique for clique in cliques if len(clique) == max_size][0])
-        print(largest_cliques)
 
     def day24(self):
         def parse_input():
@@ -203,11 +68,8 @@ class AdventOfCode:
                 expected_out[key] = z_bin[i]
             e_int = to_int(expected_out)
             e_bin = bin(e_int)[2:]
-            print("expected")
-            print(e_bin)
+
             binary = bin(to_int(self.out))[2:]
-            print("computed")
-            print(binary)
             result = int(binary, 2) ^ int(e_bin, 2)
             "check bits in the right places"
             xor_result = list(bin(result)[2:].zfill(len(self.out)))[::-1]
@@ -301,7 +163,7 @@ class AdventOfCode:
         #self.rows = [ list(row) for row in self.rows ]
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
-        day = Day22()
+        day = Day24()
         day.run()
         #day.run_connected()
         #self.day18()
