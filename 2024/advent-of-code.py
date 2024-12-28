@@ -9,9 +9,8 @@ from collections import Counter
 from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD
 from sympy import solve, Symbol
 from sympy.ntheory.modular import solve_congruence
-from functools import cache , reduce
-import math
-from day07 import Day07
+from functools import reduce
+from day09 import Day09
 
 class AdventOfCode:
 
@@ -59,148 +58,6 @@ class AdventOfCode:
         for row in grid:
             aux += ''.join(row) + "\n"
         return aux
-
-    def day8(self):
-        self.nodes = defaultdict(list)
-        antinodes = set()
-        def parse_input():
-            self.rows = [ list(row) for row in self.rows ]
-        def get_nodes():
-            for i in range(len(self.rows)):
-                for j in range(len(self.rows[0])):
-                    if self.rows[i][j] != ".":
-                        self.nodes[self.rows[i][j]].append((i,j))
-        def check_antinode_part1(pr1, pr2):
-            x1, y1 = pr1
-            x2, y2 = pr2
-            newx = x2 + (x2 - x1)
-            newy = y2 + (y2 - y1)
-            if newx >= 0 and newx < len(self.rows) and newy >= 0 and newy < len(self.rows[0]):
-                antinodes.add((newx,newy))
-        def check_antinode_part2(pr1, pr2):
-            x1, y1 = pr1
-            x2, y2 = pr2
-            dx, dy = x2 - x1, y2 - y1
-            gcd = abs(math.gcd(dx, dy))
-            step_x, step_y = dx // gcd, dy // gcd
-            for direction in (-1, 1):  # Backward (-1) and forward (1) extensions
-                px, py = x1, y1
-                while 0 <= px < len(self.rows) and 0 <= py < len(self.rows):
-                    antinodes.add((px, py))
-                    px += direction * step_x
-                    py += direction * step_y
-            """
-            newx = x2 + (x2 - x1)
-            newy = y2 + (y2 - y1)
-            while newx >= 0 and newx < len(self.rows) and newy >= 0 and newy < len(self.rows[0]):
-                antinodes.add((newx,newy))
-                newx += (x2 - x1)
-                newy += (y2 - y1)
-            """
-        def get_antinodes(part2=False):
-            for node in self.nodes:
-                nodes = self.nodes[node]
-                for i in range(len(nodes)):
-                    for j in range(i):
-                        node1 = nodes[i]
-                        node2 = nodes[j]
-                        if part2:
-                            check_antinode_part2(node1, node2)
-                            check_antinode_part2(node2, node1)
-                        else:
-                            check_antinode_part1(node1, node2)
-                            check_antinode_part1(node2, node1)
-
-        parse_input()
-        get_nodes()
-        get_antinodes()
-        print(f"Part 1: {len(antinodes)}")
-        antinodes = set()
-        get_antinodes(True)
-        print(f"Part 2: {len(antinodes)}")
-
-    def day9(self):
-        map = {}
-        self.highest_id = 0
-        def parse_input():
-            self.rows = [int(val) for val in self.rows[0]]
-        def is_even(n):
-            return n % 2 == 0
-        def block_map():
-            res = []
-            id = 0
-            for i , file in enumerate(self.rows):
-                if is_even(i):
-                    map[id] = file
-                    for _ in range(file):
-                        res.append(id)
-                    id += 1
-                else:
-                    for _ in range(file):
-                        res.append(".")
-            self.highest_id = id-1
-            self.rows = res
-        def check_sum():
-            res = 0
-            back = len(self.rows) - 1
-            for i , val in enumerate(self.rows):
-                if i > back:
-                    break
-                if val != '.':
-                    res += i * val
-                else:
-                    c = '.'
-                    while c == '.':
-                        c = self.rows[back]
-                        if c == '.':
-                            back -=1
-                        else:
-                            res += i * c
-                            back -=1
-            return res
-        def get_id_index(id):
-            for x in range(len(self.rows)):
-                if self.rows[x] == id:
-                    return x
-            else:
-                return None
-        def check_sum_whole_file():
-            res = 0
-            for id in range(self.highest_id, 0, -1):
-                for i , val in enumerate(self.rows):
-                    if val == id:
-                        break
-                    if val != '.':
-                        continue
-                    space = 1
-                    c = '.'
-                    ix = i+1
-                    while c == '.':
-                        if ix >= len(self.rows):
-                            break
-                        c = self.rows[ix]
-                        if c == '.':
-                            space += 1
-                            ix += 1
-                    size = map[id]
-                    if size <= space:
-                        back = get_id_index(id)
-                        for y in range(size):
-                            self.rows[i+y] = id
-                            self.rows[back+y] = '.'
-                        break
-            return res
-
-        parse_input()
-        block_map()
-        print(f"part 1: {check_sum()}")
-        check_sum_whole_file()
-        res = 0
-        for i , val in enumerate(self.rows):
-            if  val == '.':
-                continue
-            res += i * val
-        print(f"part 2: {res}")
 
     def day10(self):
         def parse_input():
@@ -1632,7 +1489,7 @@ class AdventOfCode:
         #self.columns = self.process_data_as_columns(file_paths[0])
         #day01.day1_part1(self.columns)
         #self.day21()
-        day = Day07()
+        day = Day09()
         day.run()
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ class Day:
             res2 = self.part2()
             print(f"Part 2: {res2}")
 
-    def run_connected(self, only1=False):
+    def run_connected(self):
         res1 , args_part2 = self.part1()
         print(f"Part 1: {res1}")
         res2 = self.part2(args_part2)
