@@ -35,6 +35,15 @@ class Input:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
             return None
 
+    def process_data_as_listed_rows(self, file_ix):
+        try:
+            with open(self.file_paths[file_ix], 'r') as file:
+                data = file.read().strip()
+            return [ list(row) for row in data.splitlines() ]
+        except FileNotFoundError:
+            print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
+            return None
+
     def process_data_as_string(self, file_ix, eof_by=""):
         try:
             with open(self.file_paths[file_ix], 'r') as file:

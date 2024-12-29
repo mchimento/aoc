@@ -1,8 +1,8 @@
 import heapq
-
+from directions import Directions
 class Grid:
 
-    def __init__(self, grid = None, dirs=None):
+    def __init__(self, grid = None, dirs : Directions =None):
         self.grid = grid
         self.dirs= dirs
 
@@ -13,6 +13,16 @@ class Grid:
                 if grid[x][y] == elem:
                     return (x, y)
         return None
+
+    def get(self, x, y, grid_arg=None):
+        grid = grid_arg if grid_arg is not None else self.grid
+        return grid[x][y]
+
+    def height(self):
+        return len(self.grid) if self.grid is None else len(self.grid)
+
+    def width(self):
+        return len(self.grid[0]) if self.grid is not None else len(self.grid[0])
 
     def create_empty(self, height, width):
         self.grid = [["."] * width for _ in range(height)]
@@ -44,18 +54,18 @@ class Grid:
             print(''.join(row))
 
     def reachable_nodes(self, x, y, max_dist, height=None, width=None):
-            reachable = []
-            if height is None:
-                height , width = len(self.grid) , len(self.grid[0])
-            for dx in range(-max_dist, max_dist + 1):
-                remaining_dist = max_dist - abs(dx)
-                for dy in range(-remaining_dist, remaining_dist + 1):
-                    if dx == dy == 0:
-                        continue
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < height and 0 <= ny < width:
-                        reachable.append((nx, ny))
-            return reachable
+        reachable = []
+        if height is None:
+            height , width = len(self.grid) , len(self.grid[0])
+        for dx in range(-max_dist, max_dist + 1):
+            remaining_dist = max_dist - abs(dx)
+            for dy in range(-remaining_dist, remaining_dist + 1):
+                if dx == dy == 0:
+                    continue
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < height and 0 <= ny < width:
+                    reachable.append((nx, ny))
+        return reachable
 
     def manhattan_distance(self, point1, point2):
         """
@@ -68,6 +78,42 @@ class Grid:
         - point2 (tuple): Coordinates of the second point (x2, y2).
         """
         return sum(abs(a - b) for a, b in zip(point1, point2))
+
+    def move_from(self, x , y, dir):
+        """
+        Move from position (x, y) in grid one step in the direction dir,
+        unless the step is blocked by wall or we are the grid border
+        """
+        if dir == self.dirs.up:
+            if x == 0:
+                return x , y , self.dirs.rotate90_clockwise(dir)
+            if self.dirs.wall is not None and self.grid[x-1][y] == self.dirs.wall:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            else:
+                return x-1 , y, dir
+        elif dir == self.dirs.down:
+            if x == len(self.grid)-1:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            if self.dirs.wall is not None and self.grid[x+1][y] == self.dirs.wall:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            else:
+                return x+1 , y , dir
+        elif dir == self.dirs.right:
+            if y == len(self.grid[0])-1:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            if self.dirs.wall is not None and self.grid[x][y+1] == self.dirs.wall:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            else:
+                return x , y+1, dir
+        elif dir == self.dirs.left:
+            if y == 0:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            if self.dirs.wall is not None and self.grid[x][y-1] == self.dirs.wall:
+                return x , y, self.dirs.rotate90_clockwise(dir)
+            else:
+                return x , y-1, dir
+        else:
+            return None
 
     def shortest_paths_rot(self, start, end, start_dir, grid_arg=None, dirs_arg=None):
         """

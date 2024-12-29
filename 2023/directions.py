@@ -1,5 +1,5 @@
 class Directions:
-    def __init__(self, grid=None, wall = None, empty='.'):
+    def __init__(self, wall = None, empty='.'):
         self.up = '^'
         self.down = 'v'
         self.left = '<'
@@ -7,7 +7,6 @@ class Directions:
         self.directions = [self.up, self.down , self.left, self.right ]
         self.empty = empty
         self.wall = wall
-        self.grid = grid
 
     def coord(self, dir):
         match dir:
@@ -42,39 +41,3 @@ class Directions:
             return self.left
         elif dir == self.down:
             return self.right
-
-    def move_from(self, x , y, dir):
-        """
-        Move from position (x, y) one step in the direction dir,
-        unless the step is blocked by wall or we are the grid border
-        """
-        if dir == self.up:
-            if x == 0:
-                return x , y , self.rotate90_clockwise(dir)
-            if self.wall is not None and self.grid[x-1][y] == self.wall:
-                return x , y, self.rotate90_clockwise(dir)
-            else:
-                return x-1 , y, dir
-        elif dir == self.down:
-            if x == len(self.grid)-1:
-                return x , y, self.rotate90_clockwise(dir)
-            if self.wall is not None and self.grid[x+1][y] == self.wall:
-                return x , y, self.rotate90_clockwise(dir)
-            else:
-                return x+1 , y , dir
-        elif dir == self.right:
-            if y == len(self.grid[0])-1:
-                return x , y, self.rotate90_clockwise(dir)
-            if self.wall is not None and self.grid[x][y+1] == self.wall:
-                return x , y, self.rotate90_clockwise(dir)
-            else:
-                return x , y+1, dir
-        elif dir == self.left:
-            if y == 0:
-                return x , y, self.rotate90_clockwise(dir)
-            if self.wall is not None and self.grid[x][y-1] == self.wall:
-                return x , y, self.rotate90_clockwise(dir)
-            else:
-                return x , y-1, dir
-        else:
-            return None
