@@ -8,10 +8,11 @@ class Day:
     def parse_input(self):
         return
 
-    def run(self, only1=False):
-        res1 = self.part1()
-        print(f"Part 1: {res1}")
-        if not only1:
+    def run(self, run_1=True, run_2=True):
+        if run_1:
+            res1 = self.part1()
+            print(f"Part 1: {res1}")
+        if run_2:
             res2 = self.part2()
             print(f"Part 2: {res2}")
 
