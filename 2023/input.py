@@ -44,7 +44,7 @@ class Input:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
             return None
 
-    def process_data_as_string(self, file_ix, eof_by=""):
+    def process_data_as_string(self, file_ix, eof_by="\n"):
         try:
             with open(self.file_paths[file_ix], 'r') as file:
                 data = file.read().strip().replace("\n",eof_by)
@@ -52,6 +52,14 @@ class Input:
         except FileNotFoundError:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
             return None
+
+    def process_data_as_blocks(self, file_ix):
+        string = self.process_data_as_string(file_ix)
+        if string is None:
+            print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
+            return None
+        else:
+            return list(map(lambda xs : xs.splitlines(), string.split("\n\n")))
 
     def int_list(self, list_string):
         return [ int(x) for x in list_string ]
