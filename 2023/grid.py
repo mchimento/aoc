@@ -1,22 +1,23 @@
 import heapq
 from directions import Directions
+import numpy as np
+
 class Grid:
 
     def __init__(self, grid = None, dirs : Directions =None):
-        self.grid = grid
+        self.grid = np.array(grid) if grid is not None else None
         self.dirs= dirs
 
     def get_elem_pos(self, elem, grid_arg=None):
         grid = grid_arg if grid_arg is not None else self.grid
-        for x in range(0, len(grid)):
-            for y in range(0, len(grid[0])):
-                if grid[x][y] == elem:
-                    return (x, y)
-        return None
+        pos = np.where(grid == elem)
+        positions = tuple((int(x), int(y)) for x, y in zip(pos[0], pos[1]))
+
+        return positions[0] if len(positions) == 1 else positions
 
     def get(self, x, y, grid_arg=None):
         grid = grid_arg if grid_arg is not None else self.grid
-        return grid[x][y]
+        return grid[x, y]
 
     def height(self):
         return len(self.grid) if self.grid is None else len(self.grid)
@@ -24,20 +25,20 @@ class Grid:
     def width(self):
         return len(self.grid[0]) if self.grid is not None else len(self.grid[0])
 
-    def create_empty(self, height, width):
-        self.grid = [["."] * width for _ in range(height)]
+    def create_empty(self, height, width, value='.'):
+        self.grid = np.full((height, width), value)
 
     def swap(self, x, y, xi, yi, grid=None):
         if grid is not None:
-            grid[x][y], grid[xi][yi] = grid[xi][yi], grid[x][y]
+            grid[x, y], grid[xi, yi] = grid[xi, yi], grid[x, y]
         else:
-            self.grid[x][y], self.grid[xi][yi] = self.grid[xi][yi], self.grid[x][y]
+            self.grid[x, y], self.grid[xi, yi] = self.grid[xi, yi], self.grid[x, y]
 
     def fill_grid(self, positions, elem):
         if positions is None:
             return
         for i, j in positions:
-            self.grid[i][j] = elem
+            self.grid[i, j] = elem
 
     def print_grid(self, grid=None):
         to_print = self.grid
@@ -133,7 +134,7 @@ class Grid:
 
         while pq:
             cost, x, y, dir = heapq.heappop(pq)
-            if grid[x][y] == end:
+            if grid[x, y] == end:
                 all_paths = []
                 self.reconstruct_paths_dir(x, y, dir, start, start_dir, parent, all_paths, [(x, y, dir)])
                 all_paths = list(map(lambda xs: xs[::-1], all_paths))
@@ -169,7 +170,7 @@ class Grid:
                 self.reconstruct_paths_dir(px, py, pdir, start, start_dir, parent, all_paths, current_path)
                 current_path.pop()
 
-    def shortest_paths(self, start, end, grid, dirs):
+    def shortest_paths(self, start, end, grid_arg=None, dirs_arg=None):
         """
         General shortest path algorithm
         """
@@ -177,6 +178,13 @@ class Grid:
         parent = {}
         heapq.heappush(pq, (0, start[0], start[1]))  # (cost, x, y)
         visited = set()
+        if grid_arg is not None:
+            grid = grid_arg
+            dirs = dirs_arg
+        else:
+            grid = self.grid
+            dirs = self.dirs
+
         rows , cols = len(grid)-1 , len(grid[0])-1
 
         while pq:
@@ -186,7 +194,7 @@ class Grid:
                 continue
             visited.add((x, y))
 
-            if grid[x][y] == end:
+            if grid[x, y] == end:
                 all_paths = []
                 self.reconstruct_paths(x, y, start, parent, all_paths, [(x, y)])
                 all_paths = list(map(lambda xs: xs[::-1], all_paths))
@@ -197,7 +205,7 @@ class Grid:
                 nx, ny = x + dx , y + dy
                 if 0 <= nx <= rows and 0 <= ny <= cols \
                     and (nx, ny) not in visited \
-                    and grid[nx][ny] != dirs.wall:
+                    and grid[nx, ny] != dirs.wall:
                     heapq.heappush(pq, (cost + 1, nx, ny))
                     if (nx, ny) not in parent:
                         parent[(nx, ny)] = []
