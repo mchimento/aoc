@@ -7,6 +7,7 @@ class Day10(Day):
 
     def parse_input(self):
         input = self.input.process_data_as_listed_rows(0)
+        print(input)
         return
 
     def part1(self):

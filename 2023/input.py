@@ -44,6 +44,14 @@ class Input:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
             return None
 
+    def process_data_as_zip_rows(self, file_ix):
+        rows = self.process_data_as_rows(file_ix)
+        if rows is None:
+            print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
+            return None
+        else:
+            return [ tuple(xs.split()) for xs in rows ]
+
     def process_data_as_string(self, file_ix, eof_by="\n"):
         try:
             with open(self.file_paths[file_ix], 'r') as file:
