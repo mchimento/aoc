@@ -8,6 +8,12 @@ class Grid:
         self.grid = np.array(grid) if grid is not None else None
         self.dirs= dirs
 
+    def __getitem__(self, index):
+        return self.grid[index]
+
+    def __setitem__(self, index, value):
+        self.grid[index] = value
+
     def get_elem_pos(self, elem, grid_arg=None):
         grid = grid_arg if grid_arg is not None else self.grid
         pos = np.where(grid == elem)
@@ -19,11 +25,14 @@ class Grid:
         grid = grid_arg if grid_arg is not None else self.grid
         return grid[x, y]
 
-    def height(self):
-        return len(self.grid) if self.grid is None else len(self.grid)
+    def is_valid_coord(self, x, y):
+        return 0 <= x < len(self.grid) and 0 <= y < len(self.grid[0])
 
-    def width(self):
-        return len(self.grid[0]) if self.grid is not None else len(self.grid[0])
+    def height(self, arg_grid=None):
+        return len(self.grid) if arg_grid is None else len(arg_grid)
+
+    def width(self, arg_grid=None):
+        return len(self.grid[0]) if arg_grid is None else len(arg_grid[0])
 
     def create_empty(self, height, width, value='.'):
         self.grid = np.full((height, width), value)
@@ -54,7 +63,7 @@ class Grid:
         for row in to_print:
             print(''.join(row))
 
-    def reachable_nodes(self, x, y, max_dist, height=None, width=None):
+    def reachable_nodes(self, x, y, max_dist=1, height=None, width=None):
         reachable = []
         if height is None:
             height , width = len(self.grid) , len(self.grid[0])
@@ -88,33 +97,77 @@ class Grid:
         if dir == self.dirs.up:
             if x == 0:
                 return x , y , self.dirs.rotate90_clockwise(dir)
-            if self.dirs.wall is not None and self.grid[x-1][y] == self.dirs.wall:
+            if self.dirs.wall is not None and self.grid[x-1, y] == self.dirs.wall:
                 return x , y, self.dirs.rotate90_clockwise(dir)
             else:
                 return x-1 , y, dir
         elif dir == self.dirs.down:
             if x == len(self.grid)-1:
                 return x , y, self.dirs.rotate90_clockwise(dir)
-            if self.dirs.wall is not None and self.grid[x+1][y] == self.dirs.wall:
+            if self.dirs.wall is not None and self.grid[x+1, y] == self.dirs.wall:
                 return x , y, self.dirs.rotate90_clockwise(dir)
             else:
                 return x+1 , y , dir
         elif dir == self.dirs.right:
             if y == len(self.grid[0])-1:
                 return x , y, self.dirs.rotate90_clockwise(dir)
-            if self.dirs.wall is not None and self.grid[x][y+1] == self.dirs.wall:
+            if self.dirs.wall is not None and self.grid[x, y+1] == self.dirs.wall:
                 return x , y, self.dirs.rotate90_clockwise(dir)
             else:
                 return x , y+1, dir
         elif dir == self.dirs.left:
             if y == 0:
                 return x , y, self.dirs.rotate90_clockwise(dir)
-            if self.dirs.wall is not None and self.grid[x][y-1] == self.dirs.wall:
+            if self.dirs.wall is not None and self.grid[x, y-1] == self.dirs.wall:
                 return x , y, self.dirs.rotate90_clockwise(dir)
             else:
                 return x , y-1, dir
         else:
             return None
+
+    def find_enclosed_nodes_within_closed_path(self, path, grid_arg=None, empty='.'):
+        """
+        Find all nodes enclosed by a given closed path.
+        """
+        if grid_arg is None:
+            grid = self.grid
+        else:
+            grid = grid_arg
+        def is_point_inside_path(x, y, path):
+            """
+            Check if a point (x, y) is inside a polygon, i.e. path, using the Ray-Casting Algorithm.
+            """
+            n = len(path)
+            inside = False
+
+            for i in range(n):
+                x1, y1 = path[i]
+                x2, y2 = path[(i + 1) % n]
+
+                # Check if point is on the boundary
+                if (y == y1 == y2 and min(x1, x2) <= x <= max(x1, x2)) or \
+                    (x == x1 == x2 and min(y1, y2) <= y <= max(y1, y2)):
+                    return False  # Treat points on the boundary as outside
+
+                # Check if ray crosses the edge
+                if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
+                    if y1 != y2:  # Avoid division by zero
+                        xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
+                    if x1 == x2 or x <= xinters:
+                        inside = not inside
+
+            return inside
+
+        enclosed_nodes = []
+
+        for x in range(self.height(grid)):
+            for y in range(self.width(grid)):
+                if (x, y) in path:
+                    continue
+                if grid[x, y] == empty:
+                    if is_point_inside_path(x, y, path):
+                        enclosed_nodes.append((x, y))
+        return enclosed_nodes
 
     def shortest_paths_rot(self, start, end, start_dir, grid_arg=None, dirs_arg=None):
         """

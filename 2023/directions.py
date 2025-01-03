@@ -1,4 +1,5 @@
 class Directions:
+
     def __init__(self, wall = None, empty='.'):
         self.up = '^'
         self.down = 'v'

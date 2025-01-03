@@ -37,7 +37,7 @@ class Day03(Day):
                         diag.append((x, y))
                 return diag
             for digit in digits:
-                reachables = self.grid.reachable_nodes(digit[0], digit[1], 1)
+                reachables = self.grid.reachable_nodes(digit[0], digit[1])
                 reachables += get_diagonal(digit[0], digit[1])
                 reachables = set(reachables) - visited
                 for x, y in reachables:
@@ -71,7 +71,7 @@ class Day03(Day):
                     if x >= 0 and x < self.grid.height() and y >= 0 and y < self.grid.width():
                         diag.append((x, y))
                 return diag
-            reachables = self.grid.reachable_nodes(x, y, 1)
+            reachables = self.grid.reachable_nodes(x, y)
             reachables += get_diagonal(x, y)
             touches = set()
             for node in reachables:
