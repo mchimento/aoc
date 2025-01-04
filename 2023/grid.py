@@ -6,10 +6,10 @@ class Grid:
 
     def __init__(self, grid = None, dirs : Directions =None):
         self.grid = np.array(grid) if grid is not None else None
-        self.dirs= dirs
+        self.dirs= dirs if dirs is not None else Directions()
 
     def __getitem__(self, index):
-        return self.grid[index]
+        return str(self.grid[index])
 
     def __setitem__(self, index, value):
         self.grid[index] = value
@@ -23,7 +23,7 @@ class Grid:
 
     def get(self, x, y, grid_arg=None):
         grid = grid_arg if grid_arg is not None else self.grid
-        return grid[x, y]
+        return str(grid[x, y])
 
     def is_valid_coord(self, x, y):
         return 0 <= x < len(self.grid) and 0 <= y < len(self.grid[0])

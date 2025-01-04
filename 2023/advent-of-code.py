@@ -1,14 +1,14 @@
 import time
-from day10 import Day10
+from day11 import Day11
 
 class AdventOfCode:
 
     def main(self):
         start = time.time()
-        day = Day10()
+        day = Day11()
         #day.run(run_1=False, run_2=True)
-        #day.run()
-        day.run_connected()
+        day.run()
+        #day.run_connected()
         end = time.time()
         print(f"Execution time: {end - start} seconds")
 
