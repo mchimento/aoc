@@ -45,6 +45,10 @@ class Input:
             return None
 
     def process_data_as_zip_rows(self, file_ix):
+        """
+        String rows are splitted in the first space.
+        e.g. 'hello world' --> ['hello', 'world']
+        """
         rows = self.process_data_as_rows(file_ix)
         if rows is None:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
@@ -62,6 +66,17 @@ class Input:
             return None
 
     def process_data_as_blocks(self, file_ix):
+        """
+        Input of the form:
+
+        AAA
+        BBB
+
+        CCC
+        DDD
+
+        Is transform in [[AAA, BBB], [CCC, DDD]]
+        """
         string = self.process_data_as_string(file_ix)
         if string is None:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
