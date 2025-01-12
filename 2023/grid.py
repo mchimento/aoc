@@ -63,6 +63,11 @@ class Grid:
         for row in to_print:
             print(''.join(row))
 
+    def transpose(self, grid=None):
+        if grid is not None:
+            to_tr = grid
+        return [''.join(column) for column in zip(*to_tr)]
+
     def reachable_nodes(self, x, y, max_dist=1, height=None, width=None):
         reachable = []
         if height is None:
