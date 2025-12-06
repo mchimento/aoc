@@ -9,8 +9,6 @@ class Day4(Day):
     def parse_input(self):
         input = self.input.process_data_as_listed_rows(0)
         self.grid = Grid(input)
-        #self.grid.print_grid()
-
 
     def remove_rolls(self):
         rolls = []
@@ -35,7 +33,4 @@ class Day4(Day):
             removed = self.remove_rolls()
             rolls += removed
 
-        #print(rolls)
-        #self.grid.fill_grid(rolls, 'X')
-        #self.grid.print_grid()
         return rolls
