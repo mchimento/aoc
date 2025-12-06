@@ -1,11 +1,11 @@
 import time
-from day13 import Day13
+from day14 import Day14
 
 class AdventOfCode:
 
     def main(self):
         start = time.time()
-        day = Day13()
+        day = Day14()
         #day.run(run_1=False, run_2=True)
         day.run()
         #day.run_connected()
