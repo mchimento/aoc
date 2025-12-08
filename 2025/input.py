@@ -38,11 +38,14 @@ class Input:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
             return None
 
-    def process_data_as_listed_rows(self, file_ix):
+    def process_data_as_listed_rows(self, file_ix, parse=None):
         try:
             with open(self.file_paths[file_ix], 'r') as file:
                 data = file.read().strip()
-            return [ list(row) for row in data.splitlines() ]
+            if parse is None:
+                return [ list(row) for row in data.splitlines() ]
+            else:
+                return [ parse(row) for row in data.splitlines() ]
         except FileNotFoundError:
             print(f"Error: The file '{self.file_paths[file_ix]}' was not found.")
             return None

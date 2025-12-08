@@ -6,12 +6,13 @@ from day_04 import Day4
 from day_05 import Day5
 from day_06 import Day6
 from day_07 import Day7
+from day_08 import Day8
 
 class AdventOfCode:
 
     def main(self):
         start = time.time()
-        day = Day7()
+        day = Day8()
         day.run(True)
         end = time.time()
         print(f"Execution time: {end - start} seconds")
