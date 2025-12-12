@@ -64,6 +64,7 @@ class Grid:
             print(''.join(row))
 
     def transpose(self, grid=None):
+        to_tr = self.grid
         if grid is not None:
             to_tr = grid
         return [''.join(column) for column in zip(*to_tr)]
@@ -99,19 +100,19 @@ class Grid:
         adjacent = []
         if height is None:
             height, width = len(self.grid), len(self.grid[0])
-        
+
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
                 if dx == 0 and dy == 0:
                     continue
                 if not include_diagonals and dx != 0 and dy != 0:
                     continue
-                    
+
                 nx, ny = x + dx, y + dy
                 if 0 <= nx < height and 0 <= ny < width:
                     if filter_func is None or filter_func(nx, ny):
                         adjacent.append((nx, ny))
-        
+
         return adjacent
 
     def manhattan_distance(self, point1, point2):
